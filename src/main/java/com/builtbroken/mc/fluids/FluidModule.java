@@ -41,7 +41,7 @@ import static net.minecraftforge.oredict.RecipeSorter.Category.SHAPED;
 @Mod(modid = FluidModule.DOMAIN, name = "VoltzEngine Fluids module", version = FluidModule.VERSION)
 public final class FluidModule
 {
-    public static final String DOMAIN = "ve-fluids";
+    public static final String DOMAIN = "vefluids";
 
     public static final String MAJOR_VERSION = "@MAJOR@";
     public static final String MINOR_VERSION = "@MINOR@";

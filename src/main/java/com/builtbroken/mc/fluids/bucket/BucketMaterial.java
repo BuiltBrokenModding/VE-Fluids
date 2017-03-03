@@ -5,6 +5,7 @@ import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.IIcon;
+import net.minecraftforge.common.config.Configuration;
 
 /**
  * @see <a href="https://github.com/BuiltBrokenModding/VoltzEngine/blob/development/license.md">License</a> for what you can and can't do with the code.
@@ -42,6 +43,10 @@ public class BucketMaterial
     public BucketMaterial getDamagedBucket(ItemStack stack)
     {
         return null;
+    }
+
+    public void handleConfig(Configuration config)
+    {
     }
 
     @SideOnly(Side.CLIENT)

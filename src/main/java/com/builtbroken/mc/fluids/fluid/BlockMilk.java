@@ -1,6 +1,6 @@
 package com.builtbroken.mc.fluids.fluid;
 
-import com.builtbroken.woodenbucket.WoodenBucket;
+import com.builtbroken.mc.fluids.FluidModule;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.material.Material;
@@ -19,14 +19,14 @@ public class BlockMilk extends BlockFluidClassic
     public BlockMilk(Fluid fluid)
     {
         super(fluid, Material.water);
-        setBlockName(WoodenBucket.PREFIX + "milk");
+        setBlockName(FluidModule.DOMAIN + ":milk");
     }
 
     @SideOnly(Side.CLIENT)
     public void registerBlockIcons(IIconRegister reg)
     {
-        this.blockIcon = reg.registerIcon(WoodenBucket.PREFIX + "milk_still");
-        this.blockFlowing = reg.registerIcon(WoodenBucket.PREFIX + "milk_flow");
+        this.blockIcon = reg.registerIcon(FluidModule.DOMAIN + ":milk_still");
+        this.blockFlowing = reg.registerIcon(FluidModule.DOMAIN + ":milk_flow");
         getFluid().setFlowingIcon(blockFlowing);
         getFluid().setStillIcon(blockIcon);
     }

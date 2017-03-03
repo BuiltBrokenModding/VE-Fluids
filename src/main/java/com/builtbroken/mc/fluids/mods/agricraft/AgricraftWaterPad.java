@@ -1,8 +1,7 @@
 package com.builtbroken.mc.fluids.mods.agricraft;
 
 import com.InfinityRaider.AgriCraft.init.Blocks;
-import com.builtbroken.woodenbucket.WoodenBucket;
-import com.builtbroken.woodenbucket.bucket.ItemWoodenBucket;
+import com.builtbroken.mc.fluids.bucket.ItemFluidBucket;
 import com.builtbroken.mc.fluids.mods.BucketHandler;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -20,16 +19,16 @@ public class AgricraftWaterPad extends BucketHandler
     @Override
     public ItemStack filledBucketClickBlock(EntityPlayer player, ItemStack itemstack, World world, int i, int j, int k, int meta)
     {
-        if (itemstack.getItem() instanceof ItemWoodenBucket)
+        if (itemstack.getItem() instanceof ItemFluidBucket)
         {
-            FluidStack stack = ((ItemWoodenBucket) itemstack.getItem()).getFluid(itemstack);
+            FluidStack stack = ((ItemFluidBucket) itemstack.getItem()).getFluid(itemstack);
             if (stack != null && stack.getFluid() == FluidRegistry.WATER && stack.amount == FluidContainerRegistry.BUCKET_VOLUME)
             {
                 if (!world.isRemote)
                 {
                     if (!player.capabilities.isCreativeMode)
                     {
-                        ItemStack emptyBucket = new ItemStack(WoodenBucket.itemBucket, 1, itemstack.getItemDamage());
+                        ItemStack emptyBucket = new ItemStack(itemstack.getItem(), 1, itemstack.getItemDamage());
                         if (!player.inventory.addItemStackToInventory(emptyBucket))
                         {
                             player.dropPlayerItemWithRandomChoice(emptyBucket, false);

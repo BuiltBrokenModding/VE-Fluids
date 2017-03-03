@@ -15,7 +15,7 @@ public class BucketMaterialHandler
 
     private static HashMap<String, Integer> nameToMeta = new HashMap();
     private static HashMap<Integer, String> metaToName = new HashMap();
-    private static int nextID = 0;
+    private static int nextID = -1;
 
     /**
      * Adds a new material type to the mods
@@ -30,24 +30,57 @@ public class BucketMaterialHandler
      */
     public static void addMaterial(String name, BucketMaterial material)
     {
+        addMaterial(name, material, -1);
+    }
+
+    /**
+     * Adds a new material type to the mods
+     * <p>
+     * Keep in mind there is only 32,000 positions for materials. If you
+     * plan to register more than a few hundred consider creating by extending
+     * the existing version. Then adding your own list of materials to it. This way
+     * the handler can be used to register materials for mods that only add a few types.
+     *
+     * @param name          - material name (e.g. iron, birch, copper, stone)
+     * @param material      - object describing the material
+     * @param requestedMeta - this is for legacy support only. It should only be used
+     *                      to transition old mods over to the new material system.
+     */
+    public static void addMaterial(String name, BucketMaterial material, int requestedMeta)
+    {
         material.materialName = name;
         if (nameToMaterial.containsKey(name))
         {
-            FluidModule.logger.error("Entry: " + name + " is being overriden with " + material);
+            FluidModule.logger.error("Entry: " + name + " is being overridden with " + material);
             nameToMaterial.put(name, material);
         }
         else
         {
             nameToMaterial.put(name, material);
-            while (nextID < 32000)
+            boolean foundID = false;
+            if (requestedMeta >= 0)
             {
-                if (metaToName.get(nextID) == null)
+                if (metaToName.get(requestedMeta) == null)
                 {
-                    metaToName.put(nextID, name);
-                    nameToMeta.put(name, nextID);
-                    material.metaValue = nextID;
+                    metaToName.put(requestedMeta, name);
+                    nameToMeta.put(name, requestedMeta);
+                    material.metaValue = requestedMeta;
+                    foundID = true;
                 }
-                nextID++;
+            }
+            if (!foundID)
+            {
+                while (nextID < 32000)
+                {
+                    nextID++;
+                    if (metaToName.get(nextID) == null)
+                    {
+                        metaToName.put(nextID, name);
+                        nameToMeta.put(name, nextID);
+                        material.metaValue = nextID;
+                        break;
+                    }
+                }
             }
             if (nextID >= 32000)
             {

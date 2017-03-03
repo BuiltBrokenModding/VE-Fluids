@@ -7,6 +7,7 @@ import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
+import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -40,6 +41,18 @@ import java.util.List;
  */
 public class ItemFluidBucket extends Item implements IFluidContainerItem
 {
+    @SideOnly(Side.CLIENT)
+    public static IIcon fluidTextureWater;
+
+    @SideOnly(Side.CLIENT)
+    public static IIcon fluidTextureWhite;
+
+    @SideOnly(Side.CLIENT)
+    public static IIcon fluidTextureLava;
+
+    @SideOnly(Side.CLIENT)
+    public static IIcon blankTexture;
+
     public static HashMap<String, IIcon> fluidToIconMap = new HashMap();
 
     //TODO rename to fluid.molten
@@ -776,5 +789,100 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
     public boolean hasContainerItem(ItemStack stack)
     {
         return getFluid(stack) != null;
+    }
+
+
+    @SideOnly(Side.CLIENT)
+    @Override
+    public void registerIcons(IIconRegister reg)
+    {
+        //Bucket textures
+        itemIcon = reg.registerIcon(FluidModule.DOMAIN + ":bucket");
+
+        //Fluid overlay defaults
+        fluidTextureWater = reg.registerIcon(FluidModule.DOMAIN + ":bucket.fluid");
+        fluidTextureWhite = reg.registerIcon(FluidModule.DOMAIN + ":bucket.fluid2");
+        fluidTextureLava = reg.registerIcon(FluidModule.DOMAIN + ":bucket.lava");
+        //Fluid overlay blank
+        blankTexture = reg.registerIcon(FluidModule.DOMAIN + ":blank");
+
+        //Supported fluids
+        for (String string : supportedFluidTextures)
+        {
+            fluidToIconMap.put(string, reg.registerIcon(FluidModule.DOMAIN + ":bucket." + string));
+        }
+
+        //Register defaults
+        fluidToIconMap.put("water", fluidTextureWater);
+        fluidToIconMap.put("lava", fluidTextureLava);
+
+        for (BucketMaterial material : BucketMaterialHandler.getMaterials())
+        {
+            material.registerIcons(reg);
+        }
+    }
+
+    @SideOnly(Side.CLIENT)
+    @Override
+    public IIcon getIcon(ItemStack stack, int pass)
+    {
+        if (pass == 0)
+        {
+            BucketMaterial material = BucketMaterialHandler.getMaterial(stack.getItemDamage());
+            if (material != null)
+            {
+                IIcon icon = material.getIcon(stack);
+                if (icon != null)
+                {
+                    return icon;
+                }
+            }
+        }
+        else if (pass == 1)
+        {
+            if (isEmpty(stack))
+            {
+                return blankTexture;
+            }
+            else
+            {
+                Fluid fluid = getFluid(stack).getFluid();
+                if (fluidToIconMap.containsKey(fluid.getName()))
+                {
+                    return fluidToIconMap.get(getFluid(stack).getFluid().getName());
+                }
+                else if (fluid.getColor() != 0xFFFFFF)
+                {
+                    return fluidTextureWhite;
+                }
+                else if (getFluid(stack).getFluid().getTemperature() > 600)
+                {
+                    return fluidTextureLava;
+                }
+                else
+                {
+                    return fluidTextureWater;
+                }
+            }
+        }
+        return super.getIcon(stack, pass);
+    }
+
+    @Override
+    public String getUnlocalizedName(ItemStack stack)
+    {
+        BucketMaterial material = BucketMaterialHandler.getMaterial(stack.getItemDamage());
+        if (material != null)
+        {
+            return material.localization;
+        }
+        return super.getUnlocalizedName();
+    }
+
+    @SideOnly(Side.CLIENT)
+    @Override
+    public boolean requiresMultipleRenderPasses()
+    {
+        return true;
     }
 }
