@@ -2,6 +2,8 @@ package com.builtbroken.mc.fluids.bucket;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.IIcon;
 
 /**
@@ -35,5 +37,22 @@ public class BucketMaterial
     {
         this.localization = localization;
         this.textureName = textureName;
+    }
+
+    public BucketMaterial getDamagedBucket(ItemStack stack)
+    {
+        return null;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public void registerIcons(IIconRegister register)
+    {
+        icon = register.registerIcon(textureName);
+    }
+
+    @SideOnly(Side.CLIENT)
+    public IIcon getIcon(ItemStack stack)
+    {
+        return icon;
     }
 }

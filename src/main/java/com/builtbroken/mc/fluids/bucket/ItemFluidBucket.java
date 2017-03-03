@@ -1,13 +1,12 @@
 package com.builtbroken.mc.fluids.bucket;
 
+import com.builtbroken.mc.fluids.FluidModule;
 import com.builtbroken.mc.fluids.mods.BucketHandler;
-import com.builtbroken.woodenbucket.WoodenBucket;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -569,65 +568,73 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
             {
                 final boolean moltenFluid = fluid.getFluid().getTemperature(fluid) > 400;
 
-                //Handles burning the player
-                if (WoodenBucket.PREVENT_HOT_FLUID_USAGE && moltenFluid)
+                BucketMaterial material = BucketMaterialHandler.getMaterial(stack.getItemDamage());
+                if (material != null)
                 {
-                    //Default 26% chance to be caught on fire
-                    if (WoodenBucket.BURN_ENTITY_WITH_HOT_FLUID && entity instanceof EntityLivingBase && world.rand.nextFloat() < ((float) fluid.getFluid().getTemperature(fluid) / 1500f))
+                    //Handles burning the player
+                    if (material.PREVENT_HOT_FLUID_USAGE && moltenFluid)
                     {
-                        EntityLivingBase living = (EntityLivingBase) entity;
-                        if (!living.isImmuneToFire())
+                        //Default 26% chance to be caught on fire
+                        if (material.BURN_ENTITY_WITH_HOT_FLUID && entity instanceof EntityLivingBase && world.rand.nextFloat() < ((float) fluid.getFluid().getTemperature(fluid) / 1500f))
                         {
-                            living.setFire(1 + world.rand.nextInt(15));
-                        }
-                        //TODO implement direct damage based on armor, or leave that to ItHurtsToDie?
-                    }
-                    if (WoodenBucket.DAMAGE_BUCKET_WITH_HOT_FLUID && world.rand.nextFloat() < ((float) fluid.getFluid().getTemperature(fluid) / 1500f))
-                    {
-                        //TODO play sound effect of items burning
-                        stack.setItemDamage(BucketTypes.CHARRED.ordinal());
-                    }
-                }
-
-                //Handles leaking of buckets
-                if (WoodenBucket.ENABLE_FLUID_LEAKING && fluid.getFluid().getViscosity(fluid) < WoodenBucket.VISCOSITY_TO_IGNORE_LEAKING)
-                {
-                    if (world.rand.nextFloat() < WoodenBucket.CHANCE_TO_LEAK)
-                    {
-                        //Event handling for bucket leaking
-                        if (BucketHandler.fluidToHandler.containsKey(fluid))
-                        {
-                            BucketHandler handler = BucketHandler.fluidToHandler.get(fluid);
-                            if (handler != null)
+                            EntityLivingBase living = (EntityLivingBase) entity;
+                            if (!living.isImmuneToFire())
                             {
-                                if (handler.onBucketLeaked(stack, world, entity, slot, held))
-                                {
-                                    return;
-                                }
+                                living.setFire(1 + world.rand.nextInt(15));
+                            }
+                            //TODO implement direct damage based on armor, or leave that to ItHurtsToDie?
+                        }
+                        if (material.DAMAGE_BUCKET_WITH_HOT_FLUID && world.rand.nextFloat() < ((float) fluid.getFluid().getTemperature(fluid) / 1500f))
+                        {
+                            //TODO play sound effect of items burning
+                            BucketMaterial damaged = material.getDamagedBucket(stack);
+                            if (damaged != null)
+                            {
+                                stack.setItemDamage(damaged.metaValue);
                             }
                         }
+                    }
 
-                        //Remove fluid from bucket
-                        int drain = WoodenBucket.AMOUNT_TO_LEAK <= 1 ? 1 : world.rand.nextInt(WoodenBucket.AMOUNT_TO_LEAK);
-                        drain(stack, drain, true);
-                        //TODO play dripping sound
-
-                        //Handles setting the world on fire if bucket leaks
-                        if (WoodenBucket.ALLOW_LEAK_TO_CAUSE_FIRES && moltenFluid && world.rand.nextFloat() < WoodenBucket.LEAK_FIRE_CHANCE)
+                    //Handles leaking of buckets
+                    if (material.ENABLE_FLUID_LEAKING && fluid.getFluid().getViscosity(fluid) < material.VISCOSITY_TO_IGNORE_LEAKING)
+                    {
+                        if (world.rand.nextFloat() < material.CHANCE_TO_LEAK)
                         {
-                            for (int i = 0; i < 7; i++)
+                            //Event handling for bucket leaking
+                            if (BucketHandler.fluidToHandler.containsKey(fluid))
                             {
-                                int x = (int) entity.posX;
-                                int y = (int) entity.posY + 2 - i;
-                                int z = (int) entity.posZ;
-
-                                Block block = world.getBlock(x, y, z);
-                                Block block2 = world.getBlock(x, y + 1, z);
-                                if (block.isSideSolid(world, x, y, z, ForgeDirection.UP))
+                                BucketHandler handler = BucketHandler.fluidToHandler.get(fluid);
+                                if (handler != null)
                                 {
-                                    if (block2.isAir(world, x, y + 1, z) || block2.isReplaceable(world, x, y + 1, z))
+                                    if (handler.onBucketLeaked(stack, world, entity, slot, held))
                                     {
-                                        world.setBlock(x, y + 1, z, Blocks.air);
+                                        return;
+                                    }
+                                }
+                            }
+
+                            //Remove fluid from bucket
+                            int drain = material.AMOUNT_TO_LEAK <= 1 ? 1 : world.rand.nextInt(material.AMOUNT_TO_LEAK);
+                            drain(stack, drain, true);
+                            //TODO play dripping sound
+
+                            //Handles setting the world on fire if bucket leaks
+                            if (material.ALLOW_LEAK_TO_CAUSE_FIRES && moltenFluid && world.rand.nextFloat() < material.LEAK_FIRE_CHANCE)
+                            {
+                                for (int i = 0; i < 7; i++)
+                                {
+                                    int x = (int) entity.posX;
+                                    int y = (int) entity.posY + 2 - i;
+                                    int z = (int) entity.posZ;
+
+                                    Block block = world.getBlock(x, y, z);
+                                    Block block2 = world.getBlock(x, y + 1, z);
+                                    if (block.isSideSolid(world, x, y, z, ForgeDirection.UP))
+                                    {
+                                        if (block2.isAir(world, x, y + 1, z) || block2.isReplaceable(world, x, y + 1, z))
+                                        {
+                                            world.setBlock(x, y + 1, z, Blocks.air);
+                                        }
                                     }
                                 }
                             }
@@ -660,15 +667,22 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
             //Base hot fluid support
             if (entityItem.worldObj.getWorldTime() % 5 == 0)
             {
-                if (WoodenBucket.PREVENT_HOT_FLUID_USAGE && fluid.getFluid().getTemperature(fluid) > 400)
+                BucketMaterial material = BucketMaterialHandler.getMaterial(entityItem.getEntityItem().getItemDamage());
+                if (material != null)
                 {
-                    if (WoodenBucket.DAMAGE_BUCKET_WITH_HOT_FLUID && entityItem.worldObj.rand.nextFloat() < ((float) fluid.getFluid().getTemperature(fluid) / 1500f))
+                    if (material.PREVENT_HOT_FLUID_USAGE && fluid.getFluid().getTemperature(fluid) > 400)
                     {
-                        //TODO play sound effect of items burning
-                        //TODO add slightly burnt, crisp, and ash version of the bucket to simulate each time it gets damaged
-                        entityItem.getEntityItem().setItemDamage(BucketTypes.CHARRED.ordinal());
+                        if (material.DAMAGE_BUCKET_WITH_HOT_FLUID && entityItem.worldObj.rand.nextFloat() < ((float) fluid.getFluid().getTemperature(fluid) / 1500f))
+                        {
+                            //TODO play sound effect of items burning
+                            BucketMaterial damaged = material.getDamagedBucket(entityItem.getEntityItem());
+                            if (damaged != null)
+                            {
+                                entityItem.getEntityItem().setItemDamage(damaged.metaValue);
+                            }
+                        }
+                        //TODO chance to catch area on fire around it
                     }
-                    //TODO chance to catch area on fire around it
                 }
             }
         }
@@ -717,9 +731,9 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
     @Override
     public void getSubItems(Item item, CreativeTabs tab, List list)
     {
-        for (BucketTypes type : BucketTypes.values())
+        for (BucketMaterial material : BucketMaterialHandler.getMaterials())
         {
-            list.add(new ItemStack(item, 1, type.ordinal()));
+            list.add(new ItemStack(item, 1, material.metaValue));
         }
 
         ItemStack waterBucket = new ItemStack(item);
@@ -749,7 +763,7 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
         {
             return null;
         }
-        return new ItemStack(WoodenBucket.itemBucket, 1, itemstack.getItemDamage());
+        return new ItemStack(FluidModule.bucket, 1, itemstack.getItemDamage());
     }
 
     @Override
@@ -762,16 +776,5 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
     public boolean hasContainerItem(ItemStack stack)
     {
         return getFluid(stack) != null;
-    }
-
-    public enum BucketTypes
-    {
-        OAK,
-        ACACIA,
-        BIRCH,
-        JUNGLE,
-        SPRUCE,
-        BIG_OAK,
-        CHARRED
     }
 }
