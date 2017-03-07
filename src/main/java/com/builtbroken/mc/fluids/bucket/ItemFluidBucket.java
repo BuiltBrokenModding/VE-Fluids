@@ -585,10 +585,10 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
                 if (material != null)
                 {
                     //Handles burning the player
-                    if (material.PREVENT_HOT_FLUID_USAGE && moltenFluid)
+                    if (material.preventHotFluidUsage && moltenFluid)
                     {
                         //Default 26% chance to be caught on fire
-                        if (material.BURN_ENTITY_WITH_HOT_FLUID && entity instanceof EntityLivingBase && world.rand.nextFloat() < ((float) fluid.getFluid().getTemperature(fluid) / 1500f))
+                        if (material.burnEntityWithHotFluid && entity instanceof EntityLivingBase && world.rand.nextFloat() < ((float) fluid.getFluid().getTemperature(fluid) / 1500f))
                         {
                             EntityLivingBase living = (EntityLivingBase) entity;
                             if (!living.isImmuneToFire())
@@ -597,7 +597,7 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
                             }
                             //TODO implement direct damage based on armor, or leave that to ItHurtsToDie?
                         }
-                        if (material.DAMAGE_BUCKET_WITH_HOT_FLUID && world.rand.nextFloat() < ((float) fluid.getFluid().getTemperature(fluid) / 1500f))
+                        if (material.damageBucketWithHotFluid && world.rand.nextFloat() < ((float) fluid.getFluid().getTemperature(fluid) / 1500f))
                         {
                             //TODO play sound effect of items burning
                             BucketMaterial damaged = material.getDamagedBucket(stack);
@@ -609,9 +609,9 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
                     }
 
                     //Handles leaking of buckets
-                    if (material.ENABLE_FLUID_LEAKING && fluid.getFluid().getViscosity(fluid) < material.VISCOSITY_TO_IGNORE_LEAKING)
+                    if (material.enableFluidLeaking && fluid.getFluid().getViscosity(fluid) < material.viscosityToIgnoreLeaking)
                     {
-                        if (world.rand.nextFloat() < material.CHANCE_TO_LEAK)
+                        if (world.rand.nextFloat() < material.chanceToLeak)
                         {
                             //Event handling for bucket leaking
                             if (BucketHandler.fluidToHandler.containsKey(fluid))
@@ -627,12 +627,12 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
                             }
 
                             //Remove fluid from bucket
-                            int drain = material.AMOUNT_TO_LEAK <= 1 ? 1 : world.rand.nextInt(material.AMOUNT_TO_LEAK);
+                            int drain = material.amountToLeak <= 1 ? 1 : world.rand.nextInt(material.amountToLeak);
                             drain(stack, drain, true);
                             //TODO play dripping sound
 
                             //Handles setting the world on fire if bucket leaks
-                            if (material.ALLOW_LEAK_TO_CAUSE_FIRES && moltenFluid && world.rand.nextFloat() < material.LEAK_FIRE_CHANCE)
+                            if (material.allowLeakToCauseFires && moltenFluid && world.rand.nextFloat() < material.leakFireChance)
                             {
                                 for (int i = 0; i < 7; i++)
                                 {
@@ -683,9 +683,9 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
                 BucketMaterial material = BucketMaterialHandler.getMaterial(entityItem.getEntityItem().getItemDamage());
                 if (material != null)
                 {
-                    if (material.PREVENT_HOT_FLUID_USAGE && fluid.getFluid().getTemperature(fluid) > 400)
+                    if (material.preventHotFluidUsage && fluid.getFluid().getTemperature(fluid) > 400)
                     {
-                        if (material.DAMAGE_BUCKET_WITH_HOT_FLUID && entityItem.worldObj.rand.nextFloat() < ((float) fluid.getFluid().getTemperature(fluid) / 1500f))
+                        if (material.damageBucketWithHotFluid && entityItem.worldObj.rand.nextFloat() < ((float) fluid.getFluid().getTemperature(fluid) / 1500f))
                         {
                             //TODO play sound effect of items burning
                             BucketMaterial damaged = material.getDamagedBucket(entityItem.getEntityItem());
@@ -874,7 +874,7 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
         BucketMaterial material = BucketMaterialHandler.getMaterial(stack.getItemDamage());
         if (material != null)
         {
-            return material.localization;
+            return material.getUnlocalizedName(stack);
         }
         return super.getUnlocalizedName();
     }

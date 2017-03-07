@@ -11,6 +11,7 @@ import com.builtbroken.mc.fluids.mods.pam.PamFreshWaterBucketRecipe;
 import com.builtbroken.mc.fluids.mods.pam.PamMilkBucketRecipe;
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.Mod;
+import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
@@ -53,6 +54,9 @@ public final class FluidModule
     public static final Logger logger = LogManager.getLogger("SBM-NoMoreRain");
     public static Configuration config;
 
+    @SidedProxy(clientSide = "com.builtbroken.mc.fluids.ClientProxy", serverSide = "com.builtbroken.mc.fluids.CommonProxy")
+    public static CommonProxy proxy;
+
     //Internal settings
     public static boolean GENERATE_MILK_FLUID = true;
 
@@ -75,15 +79,16 @@ public final class FluidModule
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event)
     {
-        config = new Configuration(new File(event.getModConfigurationDirectory(), "bbm/Fluid_Module.cfg"));
+        config = new Configuration(new File(event.getModConfigurationDirectory(), "bbm/Fluid_Module/core.cfg"));
         config.load();
         GENERATE_MILK_FLUID = config.getBoolean("EnableMilkFluidGeneration", Configuration.CATEGORY_GENERAL, GENERATE_MILK_FLUID, "Will generate a fluid for milk allowing for the bucket to be used for gathering milk from cows");
+        proxy.preInit();
     }
 
     @Mod.EventHandler
     public void init(FMLInitializationEvent event)
     {
-        if(loadBucket)
+        if (loadBucket)
         {
             this.bucket = new ItemFluidBucket(DOMAIN + ":bucket");
             GameRegistry.registerItem(bucket, "veBucket", DOMAIN);
@@ -95,11 +100,13 @@ public final class FluidModule
             BucketHandler.addBucketHandler(com.InfinityRaider.AgriCraft.init.Blocks.blockWaterPad, new AgricraftWaterPad());
             BucketHandler.addBucketHandler(com.InfinityRaider.AgriCraft.init.Blocks.blockWaterPadFull, new AgricraftWaterPadFilled());
         }
+        proxy.init();
     }
 
     @Mod.EventHandler
     public void postInit(FMLPostInitializationEvent event)
     {
+        //Load milk fluid and block
         if (GENERATE_MILK_FLUID && FluidRegistry.getFluid("milk") == null)
         {
             fluid_milk = new Fluid("milk");
@@ -108,7 +115,17 @@ public final class FluidModule
             GameRegistry.registerBlock(blockMilk, "veBlockMilk");
         }
 
-        if(bucket != null)
+        //Load per material configs
+        Configuration bucketConfig = new Configuration(new File(config.getConfigFile().getParent(), "bucket_materials.cfg"));
+        bucketConfig.load();
+        for (BucketMaterial material : BucketMaterialHandler.getMaterials())
+        {
+            material.handleConfig(bucketConfig);
+        }
+        bucketConfig.save();
+
+        //Load recipe handling for other mods
+        if (bucket != null)
         {
             //TODO add pam's harvest craft support
             if (Loader.isModLoaded("harvestcraft"))
@@ -157,6 +174,7 @@ public final class FluidModule
                 }
             }
         }
+        proxy.postInit();
         config.save();
     }
 }
