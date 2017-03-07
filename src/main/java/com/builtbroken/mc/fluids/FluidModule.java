@@ -13,6 +13,7 @@ import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
+import cpw.mods.fml.common.event.FMLLoadCompleteEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.registry.GameRegistry;
@@ -21,6 +22,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.common.config.Property;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidRegistry;
@@ -53,6 +55,7 @@ public final class FluidModule
     /** Information output thing */
     public static final Logger logger = LogManager.getLogger("SBM-NoMoreRain");
     public static Configuration config;
+    public static Configuration bucketConfig;
 
     @SidedProxy(clientSide = "com.builtbroken.mc.fluids.ClientProxy", serverSide = "com.builtbroken.mc.fluids.CommonProxy")
     public static CommonProxy proxy;
@@ -81,6 +84,38 @@ public final class FluidModule
     {
         config = new Configuration(new File(event.getModConfigurationDirectory(), "bbm/Fluid_Module/core.cfg"));
         config.load();
+
+        bucketConfig = new Configuration(new File(config.getConfigFile().getParent(), "bucket_materials.cfg"));
+        bucketConfig.load();
+
+        if (bucketConfig.hasKey(Configuration.CATEGORY_GENERAL, "metaValues"))
+        {
+            String[] values = bucketConfig.getStringList("metaValues", Configuration.CATEGORY_GENERAL, new String[]{""}, "");
+            if (values != null)
+            {
+                for (String s : values)
+                {
+                    if (s != null && s.contains(":"))
+                    {
+                        String[] split = s.split(":");
+                        try
+                        {
+                            int meta = Integer.parseInt(split[1]);
+                            BucketMaterialHandler.reserveMaterial(split[0], meta);
+                        }
+                        catch (NumberFormatException e)
+                        {
+                            throw new RuntimeException("Invalid data [" + s + "] in metaValue field in " + bucketConfig.getConfigFile());
+                        }
+                    }
+                    else
+                    {
+                        throw new RuntimeException("Invalid data [" + s + "] in metaValue field in " + bucketConfig.getConfigFile());
+                    }
+                }
+            }
+        }
+
         GENERATE_MILK_FLUID = config.getBoolean("EnableMilkFluidGeneration", Configuration.CATEGORY_GENERAL, GENERATE_MILK_FLUID, "Will generate a fluid for milk allowing for the bucket to be used for gathering milk from cows");
         proxy.preInit();
     }
@@ -116,13 +151,10 @@ public final class FluidModule
         }
 
         //Load per material configs
-        Configuration bucketConfig = new Configuration(new File(config.getConfigFile().getParent(), "bucket_materials.cfg"));
-        bucketConfig.load();
         for (BucketMaterial material : BucketMaterialHandler.getMaterials())
         {
             material.handleConfig(bucketConfig);
         }
-        bucketConfig.save();
 
         //Load recipe handling for other mods
         if (bucket != null)
@@ -176,5 +208,27 @@ public final class FluidModule
         }
         proxy.postInit();
         config.save();
+    }
+
+    @Mod.EventHandler
+    public void loadCompleted(FMLLoadCompleteEvent event)
+    {
+        //Get prop
+        Property prop = bucketConfig.get(Configuration.CATEGORY_GENERAL, "metaValues", new String[]{""});
+        prop.comment = "List of materials to meta values for containers. Do not change any of these values unless you know what you are doing. Changing these values will affect the world save and could result in unexpected behavior.";
+
+        //Create list
+        String[] list = new String[BucketMaterialHandler.getMaterials().size()];
+        int i = 0;
+        for (BucketMaterial material : BucketMaterialHandler.getMaterials())
+        {
+            list[i] = material.materialName + ":" + material.metaValue;
+            i++;
+        }
+        //Set list
+        prop.set(list);
+
+        //Save config
+        bucketConfig.save();
     }
 }

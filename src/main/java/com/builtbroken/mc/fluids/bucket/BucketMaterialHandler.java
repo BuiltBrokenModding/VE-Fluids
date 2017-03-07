@@ -48,45 +48,63 @@ public class BucketMaterialHandler
      */
     public static void addMaterial(String name, BucketMaterial material, int requestedMeta)
     {
+        //Set material name
         material.materialName = name;
+
+        //Give a warning if something is about to be overridden
         if (nameToMaterial.containsKey(name))
         {
             FluidModule.logger.error("Entry: " + name + " is being overridden with " + material);
-            nameToMaterial.put(name, material);
         }
+
+        //Store material
+        nameToMaterial.put(name, material);
+
+        //Attempt to use the requested meta value
+        if (requestedMeta >= 0 && metaToName.get(requestedMeta) == null)
+        {
+            metaToName.put(requestedMeta, name);
+            nameToMeta.put(name, requestedMeta);
+            material.metaValue = requestedMeta;
+        }
+        //If the nameToMeta contains a value, use said value
+        else if (nameToMeta.containsKey(name))
+        {
+            material.metaValue = nameToMeta.get(name);
+        }
+        //Try to locate an empty slot
         else
         {
-            nameToMaterial.put(name, material);
-            boolean foundID = false;
-            if (requestedMeta >= 0)
+            //Loop ID slots to find a free slot
+            while (nextID < 32000)
             {
-                if (metaToName.get(requestedMeta) == null)
+                nextID++;
+                if (metaToName.get(nextID) == null)
                 {
-                    metaToName.put(requestedMeta, name);
-                    nameToMeta.put(name, requestedMeta);
-                    material.metaValue = requestedMeta;
-                    foundID = true;
+                    reserveMaterial(name, nextID);
+                    material.metaValue = nextID;
+                    break;
                 }
             }
-            if (!foundID)
-            {
-                while (nextID < 32000)
-                {
-                    nextID++;
-                    if (metaToName.get(nextID) == null)
-                    {
-                        metaToName.put(nextID, name);
-                        nameToMeta.put(name, nextID);
-                        material.metaValue = nextID;
-                        break;
-                    }
-                }
-            }
+
+            //Error if we go over the meta value for items
             if (nextID >= 32000)
             {
                 throw new RuntimeException("More than 32000 bucket materials have been registered. Report this to the author so more bucket items can be add to expand the max size. In all honesty this should never happen unless a mod is overloading the register.");
             }
         }
+    }
+
+    /**
+     * Called to reserve a place in the material list
+     *
+     * @param name
+     * @param meta
+     */
+    public static void reserveMaterial(String name, int meta)
+    {
+        metaToName.put(meta, name);
+        nameToMeta.put(name, meta);
     }
 
     /**
