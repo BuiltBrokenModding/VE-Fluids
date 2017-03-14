@@ -35,18 +35,6 @@ apply plugin: 'com.github.kt3k.coveralls'
 apply plugin: 'jacoco'
 apply from: 'https://raw.githubusercontent.com/BuiltBrokenModding/BuiltBrokenScripts/buildScripts/scripts/forge/deps.gradle'
 
-minecraft {
-    replaceIn "References.java"
-    replaceIn "com/builtbroken/mc/core/deps/DepDownloader.java"
-    replace "@bbm_url@", bbm_url
-    replace "@CL@", coding_lib
-    replace "@CL-name@", CL_name
-    replace "@CL_maj@", CL_major
-    replace "@CL_min@", CL_minor
-    replace "@CL_rev@", CL_revis
-    replace "@CL_bu@", CL_build
-}
-
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
