@@ -1,0 +1,8 @@
+item.vefluids:bucket.name=Holzeimer
+item.vefluids:bucket.fluid.name=Flüssigkeit
+item.vefluids:bucket.fluid.amount.name=Menge
+item.vefluids:bucket.error.fluid.milk.notRegistered=Die Kuh scheint den Eimer nicht zu mögen
+item.vefluids:bucket.volume.notEnoughForFullBlock=Benötigt 1000mb, um einen Block mit Flüssigkeit zu füllen
+item.vefluids:bucket.creative.void=Löscht Flüssigkeiten im Kreativmodus
+fluid.milk=Milch
+tile.woodenBucket:milk.name=Milch
