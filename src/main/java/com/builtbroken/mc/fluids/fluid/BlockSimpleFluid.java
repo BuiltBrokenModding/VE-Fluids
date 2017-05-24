@@ -6,6 +6,7 @@ import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.util.IIcon;
+import net.minecraft.world.IBlockAccess;
 import net.minecraftforge.fluids.BlockFluidClassic;
 import net.minecraftforge.fluids.Fluid;
 
@@ -24,6 +25,7 @@ public class BlockSimpleFluid extends BlockFluidClassic
         setBlockName(FluidModule.DOMAIN + ":" + blockName);
     }
 
+    @Override
     @SideOnly(Side.CLIENT)
     public void registerBlockIcons(IIconRegister reg)
     {
@@ -31,5 +33,12 @@ public class BlockSimpleFluid extends BlockFluidClassic
         this.flowingIcon = reg.registerIcon(FluidModule.DOMAIN + ":" + iconName + "_flow");
         getFluid().setFlowingIcon(flowingIcon);
         getFluid().setStillIcon(blockIcon);
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public int colorMultiplier(IBlockAccess world, int x, int y, int z)
+    {
+        return getFluid().getColor();
     }
 }

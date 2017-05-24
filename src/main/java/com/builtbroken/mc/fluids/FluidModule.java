@@ -161,14 +161,17 @@ public final class FluidModule
         for (int i = 0; i < supportedFluidsForGeneration.length; i++)
         {
             String fluidID = supportedFluidsForGeneration[i];
-            Fluid fluid = createOrGetFluid(fluidID, "fluid");
-            if (fluid != null)
+            if (requestedFluids.contains(fluidID)) //TODO add override config
             {
-                if (fluid instanceof FluidVE)
+                Fluid fluid = createOrGetFluid(fluidID, "fluid");
+                if (fluid != null)
                 {
-                    ((FluidVE) fluid).setColor(fluidColors[i]);
+                    if (fluid instanceof FluidVE)
+                    {
+                        ((FluidVE) fluid).setColor(fluidColors[i]);
+                    }
+                    logger.info("\tGenerated: " + fluidID + " --> " + fluid);
                 }
-                logger.info("\tGenerated: " + fluidID + " --> " + fluid);
             }
         }
         logger.info("Done... if your fluid was not generated then it was not supported. \n Supported fluids: " + supportedFluidsForGeneration);
@@ -239,29 +242,27 @@ public final class FluidModule
      * @param name
      * @return
      */
-    public Fluid createOrGetFluid(String name, String icon)
+    public static Fluid createOrGetFluid(String name, String icon)
     {
-        Fluid fluid = null;
-        if (requestedFluids.contains(name)) //TODO add override config
+        Fluid fluid;
+        if (FluidRegistry.getFluid(name) == null)
         {
-            if (FluidRegistry.getFluid(name) == null)
+            fluid = new FluidVE(name);
+            if (!FluidRegistry.registerFluid(fluid))
             {
-                fluid = new FluidVE(name);
-                if (!FluidRegistry.registerFluid(fluid))
-                {
-                    //Should never happen
-                    throw new RuntimeException("Failed to register fluid[" + name + "] even though one is not registered");
-                }
+                //Should never happen
+                throw new RuntimeException("Failed to register fluid[" + name + "] even though one is not registered");
             }
-            else
-            {
-                fluid = FluidRegistry.getFluid(name);
-            }
-            if (fluid.getBlock() == null) //TODO add config to disable block
-            {
-                Block block = new BlockSimpleFluid(fluid, name, icon);
-                GameRegistry.registerBlock(block, "veBlock" + name.substring(0, 1).toUpperCase() + name.substring(1, name.length()));
-            }
+        }
+        else
+        {
+            fluid = FluidRegistry.getFluid(name);
+        }
+        if (fluid.getBlock() == null) //TODO add config to disable block
+        {
+            Block block = new BlockSimpleFluid(fluid, name, icon);
+            String blockName = "veBlock" + name.substring(0, 1).toUpperCase() + name.substring(1, name.length());
+            GameRegistry.registerBlock(block, blockName);
         }
         return fluid;
     }

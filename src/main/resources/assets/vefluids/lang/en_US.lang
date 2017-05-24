@@ -5,4 +5,7 @@ item.vefluids:bucket.error.fluid.milk.notRegistered=The cow seem to dislike the 
 item.vefluids:bucket.volume.notEnoughForFullBlock=Need a 1000mb to place a full block of fluid
 item.vefluids:bucket.creative.void=Voids Fluids in Creative Mode
 fluid.milk=Milk
+fluid.fuel=Fuel
+fluid.oil=Oil
+
 tile.woodenBucket:milk.name=Milk
