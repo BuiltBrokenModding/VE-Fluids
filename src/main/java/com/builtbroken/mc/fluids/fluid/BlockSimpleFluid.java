@@ -12,22 +12,24 @@ import net.minecraftforge.fluids.Fluid;
 /**
  * Created by Dark on 8/8/2015.
  */
-public class BlockMilk extends BlockFluidClassic
+public class BlockSimpleFluid extends BlockFluidClassic
 {
-    IIcon blockFlowing;
+    private IIcon flowingIcon;
+    private String iconName;
 
-    public BlockMilk(Fluid fluid)
+    public BlockSimpleFluid(Fluid fluid, String blockName, String iconName)
     {
         super(fluid, Material.water);
-        setBlockName(FluidModule.DOMAIN + ":milk");
+        this.iconName = iconName;
+        setBlockName(FluidModule.DOMAIN + ":" + blockName);
     }
 
     @SideOnly(Side.CLIENT)
     public void registerBlockIcons(IIconRegister reg)
     {
-        this.blockIcon = reg.registerIcon(FluidModule.DOMAIN + ":milk_still");
-        this.blockFlowing = reg.registerIcon(FluidModule.DOMAIN + ":milk_flow");
-        getFluid().setFlowingIcon(blockFlowing);
+        this.blockIcon = reg.registerIcon(FluidModule.DOMAIN + ":" + iconName + "_still");
+        this.flowingIcon = reg.registerIcon(FluidModule.DOMAIN + ":" + iconName + "_flow");
+        getFluid().setFlowingIcon(flowingIcon);
         getFluid().setStillIcon(blockIcon);
     }
 }

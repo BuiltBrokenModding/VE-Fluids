@@ -3,7 +3,8 @@ package com.builtbroken.mc.fluids;
 import com.builtbroken.mc.fluids.bucket.BucketMaterial;
 import com.builtbroken.mc.fluids.bucket.BucketMaterialHandler;
 import com.builtbroken.mc.fluids.bucket.ItemFluidBucket;
-import com.builtbroken.mc.fluids.fluid.BlockMilk;
+import com.builtbroken.mc.fluids.fluid.BlockSimpleFluid;
+import com.builtbroken.mc.fluids.fluid.FluidVE;
 import com.builtbroken.mc.fluids.mods.BucketHandler;
 import com.builtbroken.mc.fluids.mods.agricraft.AgricraftWaterPad;
 import com.builtbroken.mc.fluids.mods.agricraft.AgricraftWaterPadFilled;
@@ -12,10 +13,7 @@ import com.builtbroken.mc.fluids.mods.pam.PamMilkBucketRecipe;
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.SidedProxy;
-import cpw.mods.fml.common.event.FMLInitializationEvent;
-import cpw.mods.fml.common.event.FMLLoadCompleteEvent;
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+import cpw.mods.fml.common.event.*;
 import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
@@ -31,7 +29,10 @@ import net.minecraftforge.oredict.RecipeSorter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.awt.*;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import static net.minecraftforge.oredict.RecipeSorter.Category.SHAPED;
 
@@ -70,6 +71,15 @@ public final class FluidModule
     public static ItemFluidBucket bucket;
 
     public static Fluid fluid_milk;
+
+    public static String[] supportedFluidsForGeneration = new String[]{"fuel", "oil"};
+    public static int[] fluidColors = new int[]
+            {
+                    new Color(110, 109, 19).getRGB(),
+                    new Color(27, 27, 27).getRGB()
+            };
+
+    protected List<String> requestedFluids = new ArrayList();
 
     /**
      * Called to request that the bucket loads
@@ -142,13 +152,26 @@ public final class FluidModule
     public void postInit(FMLPostInitializationEvent event)
     {
         //Load milk fluid and block
-        if (GENERATE_MILK_FLUID && FluidRegistry.getFluid("milk") == null)
+        if ((GENERATE_MILK_FLUID || requestedFluids.contains("milk")))
         {
-            fluid_milk = new Fluid("milk");
-            FluidRegistry.registerFluid(fluid_milk);
-            Block blockMilk = new BlockMilk(fluid_milk);
-            GameRegistry.registerBlock(blockMilk, "veBlockMilk");
+            fluid_milk = createOrGetFluid("milk", "milk");
         }
+
+        logger.info("Generating fluids");
+        for (int i = 0; i < supportedFluidsForGeneration.length; i++)
+        {
+            String fluidID = supportedFluidsForGeneration[i];
+            Fluid fluid = createOrGetFluid(fluidID, "fluid");
+            if (fluid != null)
+            {
+                if (fluid instanceof FluidVE)
+                {
+                    ((FluidVE) fluid).setColor(fluidColors[i]);
+                }
+                logger.info("\tGenerated: " + fluidID + " --> " + fluid);
+            }
+        }
+        logger.info("Done... if your fluid was not generated then it was not supported. \n Supported fluids: " + supportedFluidsForGeneration);
 
         //Load per material configs
         for (BucketMaterial material : BucketMaterialHandler.getMaterials())
@@ -208,6 +231,59 @@ public final class FluidModule
         }
         proxy.postInit();
         config.save();
+    }
+
+    /**
+     * Used to quickly create a new fluid with block
+     *
+     * @param name
+     * @return
+     */
+    public Fluid createOrGetFluid(String name, String icon)
+    {
+        Fluid fluid = null;
+        if (requestedFluids.contains(name)) //TODO add override config
+        {
+            if (FluidRegistry.getFluid(name) == null)
+            {
+                fluid = new FluidVE(name);
+                if (!FluidRegistry.registerFluid(fluid))
+                {
+                    //Should never happen
+                    throw new RuntimeException("Failed to register fluid[" + name + "] even though one is not registered");
+                }
+            }
+            else
+            {
+                fluid = FluidRegistry.getFluid(name);
+            }
+            if (fluid.getBlock() == null) //TODO add config to disable block
+            {
+                Block block = new BlockSimpleFluid(fluid, name, icon);
+                GameRegistry.registerBlock(block, "veBlock" + name.substring(0, 1).toUpperCase() + name.substring(1, name.length()));
+            }
+        }
+        return fluid;
+    }
+
+    @Mod.EventHandler
+    public void receiveMessage(FMLInterModComms.IMCEvent event)
+    {
+        if (event.getMessages() != null)
+        {
+            for (FMLInterModComms.IMCMessage message : event.getMessages())
+            {
+                if ("requestFluid".equalsIgnoreCase(message.key))
+                {
+                    String fluid = message.getStringValue();
+                    if (fluid != null && !fluid.trim().isEmpty())
+                    {
+                        requestedFluids.add(fluid.trim().toLowerCase());
+                    }
+                }
+                //TODO add bucket materials
+            }
+        }
     }
 
     @Mod.EventHandler
