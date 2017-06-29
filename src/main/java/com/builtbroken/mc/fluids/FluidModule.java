@@ -7,7 +7,6 @@ import com.builtbroken.mc.fluids.fluid.BlockSimpleFluid;
 import com.builtbroken.mc.fluids.fluid.FluidVE;
 import com.builtbroken.mc.fluids.mods.pam.PamFreshWaterBucketRecipe;
 import com.builtbroken.mc.fluids.mods.pam.PamMilkBucketRecipe;
-import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
@@ -72,6 +71,9 @@ public final class FluidModule
 
     public static Fluid fluid_milk;
 
+    public static List<Fluid> generatedFluids = new ArrayList();
+    public static List<BlockSimpleFluid> generatedFluidBlocks = new ArrayList();
+
     public static String[] supportedFluidsForGeneration = new String[]{"fuel", "oil"};
     public static int[] fluidColors = new int[]
             {
@@ -125,7 +127,7 @@ public final class FluidModule
         MinecraftForge.EVENT_BUS.register(bucket);
 
         //Test bucket, might add to actual content later
-        materialIron = new BucketMaterial(DOMAIN + ":ironBucket", new ResourceLocation(DOMAIN,"items/bucket.png"));
+        materialIron = new BucketMaterial(DOMAIN + ":ironBucket", new ResourceLocation(DOMAIN, "items/bucket"));
         BucketMaterialHandler.addMaterial("iron", materialIron);
 
         GENERATE_MILK_FLUID = config.getBoolean("EnableMilkFluidGeneration", Configuration.CATEGORY_GENERAL, GENERATE_MILK_FLUID, "Will generate a fluid for milk allowing for the bucket to be used for gathering milk from cows");
@@ -248,6 +250,7 @@ public final class FluidModule
                 //Should never happen
                 throw new RuntimeException("Failed to register fluid[" + name + "] even though one is not registered");
             }
+            generatedFluids.add(fluid);
         }
         else
         {
@@ -255,9 +258,10 @@ public final class FluidModule
         }
         if (fluid.getBlock() == null) //TODO add config to disable block
         {
-            Block block = new BlockSimpleFluid(fluid, name);
+            BlockSimpleFluid block = new BlockSimpleFluid(fluid, name);
             String blockName = "veBlock" + name.substring(0, 1).toUpperCase() + name.substring(1, name.length());
             GameRegistry.registerBlock(block, blockName);
+            generatedFluidBlocks.add(block);
         }
         return fluid;
     }
