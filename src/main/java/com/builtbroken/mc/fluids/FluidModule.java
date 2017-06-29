@@ -188,7 +188,7 @@ public final class FluidModule
                     RecipeSorter.register(DOMAIN + ":woodenBucketFreshMilk", PamMilkBucketRecipe.class, SHAPED, "after:minecraft:shaped");
                     if (FluidRegistry.getFluid("milk") != null)
                     {
-                        Item itemFreshMilk = (Item) Item.itemRegistry.getObject(new ResourceLocation("harvestcraft:freshmilkItem"));
+                        Item itemFreshMilk = (Item) Item.REGISTRY.getObject(new ResourceLocation("harvestcraft:freshmilkItem"));
                         if (itemFreshMilk == null)
                         {
                             logger.error("Failed to find item harvestcraft:freshmilkItem");
@@ -209,7 +209,7 @@ public final class FluidModule
                     RecipeSorter.register(DOMAIN + ":woodenBucketFreshMilk", PamFreshWaterBucketRecipe.class, SHAPED, "after:minecraft:shaped");
                     if (FluidRegistry.getFluid("milk") != null)
                     {
-                        Item itemFreshWater = (Item) Item.itemRegistry.getObject(new ResourceLocation("harvestcraft:freshwaterItem"));
+                        Item itemFreshWater = (Item) Item.REGISTRY.getObject(new ResourceLocation("harvestcraft:freshwaterItem"));
                         if (itemFreshWater == null)
                         {
                             logger.error("Failed to find item harvestcraft:freshwaterItem");
@@ -287,7 +287,7 @@ public final class FluidModule
     {
         //Get prop
         Property prop = bucketConfig.get(Configuration.CATEGORY_GENERAL, "metaValues", new String[]{""});
-        prop.comment = "List of materials to meta values for containers. Do not change any of these values unless you know what you are doing. Changing these values will affect the world save and could result in unexpected behavior.";
+        prop.setComment("List of materials to meta values for containers. Do not change any of these values unless you know what you are doing. Changing these values will affect the world save and could result in unexpected behavior.");
 
         //Create list
         String[] list = new String[BucketMaterialHandler.getMaterials().size()];

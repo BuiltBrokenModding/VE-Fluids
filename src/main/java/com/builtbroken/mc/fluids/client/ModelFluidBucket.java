@@ -10,30 +10,35 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
+import net.minecraft.client.renderer.block.model.*;
 import net.minecraft.client.renderer.block.model.ItemCameraTransforms.TransformType;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.vertex.VertexFormat;
-import net.minecraft.client.resources.model.IBakedModel;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.World;
 import net.minecraftforge.client.model.*;
+import net.minecraftforge.common.model.IModelPart;
+import net.minecraftforge.common.model.IModelState;
+import net.minecraftforge.common.model.TRSRTransformation;
 import net.minecraftforge.fluids.*;
 import org.apache.commons.lang3.tuple.Pair;
 
 import javax.vecmath.Matrix4f;
 import javax.vecmath.Quat4f;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
  * Clone of {@link net.minecraftforge.client.model.ModelDynBucket} to be more customized towards the application of VE's bucket
  * Though a lot of the code is custom All credit goes to the orginal creator plus fry, lex, and anyone else.
  */
-public class ModelFluidBucket implements IModel, IModelCustomData<ModelFluidBucket>
+public class ModelFluidBucket implements IModel, IModelCustomData
 {
     public static final ResourceLocation default_fluid_texture = new ResourceLocation(FluidModule.DOMAIN, "items/bucket.fluid2");
     public static final ResourceLocation default_bucket_texture = new ResourceLocation(FluidModule.DOMAIN, "items/bucket");
@@ -91,7 +96,7 @@ public class ModelFluidBucket implements IModel, IModelCustomData<ModelFluidBuck
     }
 
     @Override
-    public IFlexibleBakedModel bake(IModelState state, VertexFormat format, Function<ResourceLocation, TextureAtlasSprite> bakedTextureGetter)
+    public IBakedModel bake(IModelState state, VertexFormat format, Function<ResourceLocation, TextureAtlasSprite> bakedTextureGetter)
     {
         ImmutableMap<TransformType, TRSRTransformation> transformMap = IPerspectiveAwareModel.MapWrapper.getTransforms(state);
 
@@ -113,8 +118,8 @@ public class ModelFluidBucket implements IModel, IModelCustomData<ModelFluidBuck
         if (baseLocation != null)
         {
             // build base (insidest)
-            IFlexibleBakedModel model = (new ItemLayerModel(ImmutableList.of(baseLocation))).bake(state, format, bakedTextureGetter);
-            builder.addAll(model.getGeneralQuads());
+            IBakedModel model = (new ItemLayerModel(ImmutableList.of(baseLocation))).bake(state, format, bakedTextureGetter);
+            builder.addAll(model.getQuads(null, null, 0));
         }
         if (liquidLocation != null && fluidSprite != null)
         {
@@ -124,7 +129,7 @@ public class ModelFluidBucket implements IModel, IModelCustomData<ModelFluidBuck
             builder.addAll(ItemTextureQuadConverter.convertTexture(format, transform, liquid, fluidSprite, SOUTH_Z_FLUID, EnumFacing.SOUTH, fluid.getColor()));
         }
 
-        return new BakedDynBucket(this, builder.build(), fluidSprite, format, Maps.immutableEnumMap(transformMap), Maps.<String, IFlexibleBakedModel>newHashMap());
+        return new BakedDynBucket(this, builder.build(), fluidSprite, format, Maps.immutableEnumMap(transformMap), Maps.<String, IBakedModel>newHashMap());
     }
 
     @Override
@@ -155,26 +160,16 @@ public class ModelFluidBucket implements IModel, IModelCustomData<ModelFluidBuck
         return new ModelFluidBucket(material.getBucketResourceLocation(), material.getFluidResourceLocation(), fluid);
     }
 
-    // the dynamic bucket is based on the empty bucket
-    protected static class BakedDynBucket extends ItemLayerModel.BakedModel implements ISmartItemModel, IPerspectiveAwareModel
+    private static final class BakedDynBucketOverrideHandler extends ItemOverrideList
     {
-
-        private final ModelFluidBucket parent;
-        private final Map<String, IFlexibleBakedModel> cache; // contains all the baked models since they'll never change
-        private final ImmutableMap<TransformType, TRSRTransformation> transforms;
-
-        public BakedDynBucket(ModelFluidBucket parent,
-                              ImmutableList<BakedQuad> quads, TextureAtlasSprite particle, VertexFormat format, ImmutableMap<ItemCameraTransforms.TransformType, TRSRTransformation> transforms,
-                              Map<String, IFlexibleBakedModel> cache)
+        public static final BakedDynBucketOverrideHandler INSTANCE = new BakedDynBucketOverrideHandler();
+        private BakedDynBucketOverrideHandler()
         {
-            super(quads, particle, format);
-            this.parent = parent;
-            this.transforms = transforms;
-            this.cache = cache;
+            super(ImmutableList.<ItemOverride>of());
         }
 
         @Override
-        public IBakedModel handleItemState(ItemStack stack)
+        public IBakedModel handleItemState(IBakedModel originalModel, ItemStack stack, World world, EntityLivingBase entity)
         {
             FluidStack fluidStack = FluidContainerRegistry.getFluidForFilledItem(stack);
             if (fluidStack == null)
@@ -203,9 +198,11 @@ public class ModelFluidBucket implements IModel, IModelCustomData<ModelFluidBuck
 
             String key = material + ":" + fluidName;
 
-            if (!cache.containsKey(key))
+            ModelFluidBucket.BakedDynBucket model = (ModelFluidBucket.BakedDynBucket)originalModel;
+
+            if (!model.cache.containsKey(key))
             {
-                IModel model = parent.process(ImmutableMap.of("fluid", fluidName, "material", material));
+                IModel parent = model.parent.process(ImmutableMap.of("fluid", fluidName, "material", material));
                 Function<ResourceLocation, TextureAtlasSprite> textureGetter;
                 textureGetter = new Function<ResourceLocation, TextureAtlasSprite>()
                 {
@@ -215,18 +212,62 @@ public class ModelFluidBucket implements IModel, IModelCustomData<ModelFluidBuck
                     }
                 };
 
-                IFlexibleBakedModel bakedModel = model.bake(new SimpleModelState(transforms), this.getFormat(), textureGetter);
-                cache.put(key, bakedModel);
+                IBakedModel bakedModel = parent.bake(new SimpleModelState(model.transforms), model.format, textureGetter);
+                model.cache.put(key, bakedModel);
                 return bakedModel;
             }
 
-            return cache.get(key);
+            return model.cache.get(key);
+        }
+    }
+
+    // the dynamic bucket is based on the empty bucket
+    private static final class BakedDynBucket implements IPerspectiveAwareModel
+    {
+
+        private final ModelFluidBucket parent;
+        // FIXME: guava cache?
+        private final Map<String, IBakedModel> cache; // contains all the baked models since they'll never change
+        private final ImmutableMap<TransformType, TRSRTransformation> transforms;
+        private final ImmutableList<BakedQuad> quads;
+        private final TextureAtlasSprite particle;
+        private final VertexFormat format;
+
+        public BakedDynBucket(ModelFluidBucket parent,
+                              ImmutableList<BakedQuad> quads, TextureAtlasSprite particle, VertexFormat format, ImmutableMap<ItemCameraTransforms.TransformType, TRSRTransformation> transforms,
+                              Map<String, IBakedModel> cache)
+        {
+            this.quads = quads;
+            this.particle = particle;
+            this.format = format;
+            this.parent = parent;
+            this.transforms = transforms;
+            this.cache = cache;
         }
 
         @Override
-        public Pair<? extends IFlexibleBakedModel, Matrix4f> handlePerspective(TransformType cameraTransformType)
+        public ItemOverrideList getOverrides()
+        {
+            return BakedDynBucketOverrideHandler.INSTANCE;
+        }
+
+        @Override
+        public Pair<? extends IBakedModel, Matrix4f> handlePerspective(TransformType cameraTransformType)
         {
             return IPerspectiveAwareModel.MapWrapper.handlePerspective(this, transforms, cameraTransformType);
         }
+
+        @Override
+        public List<BakedQuad> getQuads(IBlockState state, EnumFacing side, long rand)
+        {
+            if(side == null) return quads;
+            return ImmutableList.of();
+        }
+
+        public boolean isAmbientOcclusion() { return true;  }
+        public boolean isGui3d() { return false; }
+        public boolean isBuiltInRenderer() { return false; }
+        public TextureAtlasSprite getParticleTexture() { return particle; }
+        public ItemCameraTransforms getItemCameraTransforms() { return ItemCameraTransforms.DEFAULT; }
     }
 }
