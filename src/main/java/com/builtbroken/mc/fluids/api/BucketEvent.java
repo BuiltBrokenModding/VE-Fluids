@@ -1,7 +1,7 @@
 package com.builtbroken.mc.fluids.api;
 
-import cpw.mods.fml.common.eventhandler.Event;
 import net.minecraft.item.ItemStack;
+import net.minecraftforge.fml.common.eventhandler.Event;
 
 /**
  * Base class for all bucket events

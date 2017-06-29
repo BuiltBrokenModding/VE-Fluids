@@ -1,11 +1,9 @@
 package com.builtbroken.mc.fluids.bucket;
 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.IIcon;
 import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 /**
  * Handles customization for a material value
@@ -26,10 +24,6 @@ public class BucketMaterial
     public int amountToLeak = 1;
     public float chanceToLeak = 0.03f;
     public float leakFireChance = 0.4f;
-
-    /** Inventory icon */
-    @SideOnly(Side.CLIENT)
-    public IIcon icon;
 
     /** Localization to translate, prefixed with 'item.' */
     public String localization;
@@ -74,18 +68,6 @@ public class BucketMaterial
         chanceToLeak = config.getFloat("LeakChance", "BucketUsage." + materialName, chanceToLeak, 0f, 1f, "What is the chance that a leak will happen, calculated each tick with high numbers being more often");
         allowLeakToCauseFires = config.getBoolean("AllowFires", "BucketUsage." + materialName, allowLeakToCauseFires, "If molten fluid leaks, should there be a chance to cause fires?");
         leakFireChance = config.getFloat("FireChance", "BucketUsage." + materialName, leakFireChance, 0f, 1f, "How often to cause fire from molten fluids leaking");
-    }
-
-    @SideOnly(Side.CLIENT)
-    public void registerIcons(IIconRegister register)
-    {
-        icon = register.registerIcon(textureName);
-    }
-
-    @SideOnly(Side.CLIENT)
-    public IIcon getIcon(ItemStack stack)
-    {
-        return icon;
     }
 
     @SideOnly(Side.CLIENT)

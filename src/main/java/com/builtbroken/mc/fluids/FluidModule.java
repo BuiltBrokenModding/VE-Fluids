@@ -5,19 +5,12 @@ import com.builtbroken.mc.fluids.bucket.BucketMaterialHandler;
 import com.builtbroken.mc.fluids.bucket.ItemFluidBucket;
 import com.builtbroken.mc.fluids.fluid.BlockSimpleFluid;
 import com.builtbroken.mc.fluids.fluid.FluidVE;
-import com.builtbroken.mc.fluids.mods.BucketHandler;
-import com.builtbroken.mc.fluids.mods.agricraft.AgricraftWaterPad;
-import com.builtbroken.mc.fluids.mods.agricraft.AgricraftWaterPadFilled;
 import com.builtbroken.mc.fluids.mods.pam.PamFreshWaterBucketRecipe;
 import com.builtbroken.mc.fluids.mods.pam.PamMilkBucketRecipe;
-import cpw.mods.fml.common.Loader;
-import cpw.mods.fml.common.Mod;
-import cpw.mods.fml.common.SidedProxy;
-import cpw.mods.fml.common.event.*;
-import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
@@ -25,6 +18,11 @@ import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fml.common.Loader;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.SidedProxy;
+import net.minecraftforge.fml.common.event.*;
+import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.oredict.RecipeSorter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -140,10 +138,10 @@ public final class FluidModule
             MinecraftForge.EVENT_BUS.register(bucket);
         }
 
-        if (Loader.isModLoaded("AgriCraft"))
+        if (Loader.isModLoaded("AgriCraft")) //No version for 1.8
         {
-            BucketHandler.addBucketHandler(com.InfinityRaider.AgriCraft.init.Blocks.blockWaterPad, new AgricraftWaterPad());
-            BucketHandler.addBucketHandler(com.InfinityRaider.AgriCraft.init.Blocks.blockWaterPadFull, new AgricraftWaterPadFilled());
+            //BucketHandler.addBucketHandler(com.InfinityRaider.AgriCraft.init.Blocks.blockWaterPad, new AgricraftWaterPad());
+            //BucketHandler.addBucketHandler(com.InfinityRaider.AgriCraft.init.Blocks.blockWaterPadFull, new AgricraftWaterPadFilled());
         }
         proxy.init();
     }
@@ -193,7 +191,7 @@ public final class FluidModule
                     RecipeSorter.register(DOMAIN + ":woodenBucketFreshMilk", PamMilkBucketRecipe.class, SHAPED, "after:minecraft:shaped");
                     if (FluidRegistry.getFluid("milk") != null)
                     {
-                        Item itemFreshMilk = (Item) Item.itemRegistry.getObject("harvestcraft:freshmilkItem");
+                        Item itemFreshMilk = (Item) Item.itemRegistry.getObject(new ResourceLocation("harvestcraft:freshmilkItem"));
                         if (itemFreshMilk == null)
                         {
                             logger.error("Failed to find item harvestcraft:freshmilkItem");
@@ -214,7 +212,7 @@ public final class FluidModule
                     RecipeSorter.register(DOMAIN + ":woodenBucketFreshMilk", PamFreshWaterBucketRecipe.class, SHAPED, "after:minecraft:shaped");
                     if (FluidRegistry.getFluid("milk") != null)
                     {
-                        Item itemFreshWater = (Item) Item.itemRegistry.getObject("harvestcraft:freshwaterItem");
+                        Item itemFreshWater = (Item) Item.itemRegistry.getObject(new ResourceLocation("harvestcraft:freshwaterItem"));
                         if (itemFreshWater == null)
                         {
                             logger.error("Failed to find item harvestcraft:freshwaterItem");
@@ -247,7 +245,7 @@ public final class FluidModule
         Fluid fluid;
         if (FluidRegistry.getFluid(name) == null)
         {
-            fluid = new FluidVE(name);
+            fluid = new FluidVE(DOMAIN, name, icon);
             if (!FluidRegistry.registerFluid(fluid))
             {
                 //Should never happen
@@ -260,7 +258,7 @@ public final class FluidModule
         }
         if (fluid.getBlock() == null) //TODO add config to disable block
         {
-            Block block = new BlockSimpleFluid(fluid, name, icon);
+            Block block = new BlockSimpleFluid(fluid, name);
             String blockName = "veBlock" + name.substring(0, 1).toUpperCase() + name.substring(1, name.length());
             GameRegistry.registerBlock(block, blockName);
         }

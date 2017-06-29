@@ -7,6 +7,7 @@ import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.fluids.Fluid;
 
@@ -59,7 +60,7 @@ public class BucketHandler
      * @param player
      * @return
      */
-    public ItemStack emptyBucketClickBlock(EntityPlayer player, ItemStack itemstack, World world, int i, int j, int k, int meta)
+    public ItemStack emptyBucketClickBlock(EntityPlayer player, ItemStack itemstack, World world, BlockPos pos)
     {
         return itemstack;
     }
@@ -70,18 +71,14 @@ public class BucketHandler
      * @param player
      * @param itemstack
      * @param world
-     * @param i
-     * @param j
-     * @param k
-     * @param meta
      * @return
      */
-    public ItemStack filledBucketClickBlock(EntityPlayer player, ItemStack itemstack, World world, int i, int j, int k, int meta)
+    public ItemStack filledBucketClickBlock(EntityPlayer player, ItemStack itemstack, World world, BlockPos pos)
     {
         return itemstack;
     }
 
-    public ItemStack placeFluidClickBlock(EntityPlayer player, ItemStack itemstack, World world, int i, int j, int k, int meta)
+    public ItemStack placeFluidClickBlock(EntityPlayer player, ItemStack itemstack, World world, BlockPos pos)
     {
         return itemstack;
     }

@@ -1,5 +1,6 @@
 package com.builtbroken.mc.fluids.fluid;
 
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fluids.Fluid;
 
 /**
@@ -10,9 +11,9 @@ public class FluidVE extends Fluid
 {
     protected int color = 0xFFFFFF;
 
-    public FluidVE(String fluidName)
+    public FluidVE(String modID, String fluidName, String icon)
     {
-        super(fluidName);
+        super(fluidName, new ResourceLocation(modID, icon), new ResourceLocation(modID, icon + "_flowing"));
     }
 
     public void setColor(int color)

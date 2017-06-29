@@ -2,12 +2,10 @@ package com.builtbroken.mc.fluids.bucket;
 
 import com.builtbroken.mc.fluids.FluidModule;
 import com.builtbroken.mc.fluids.mods.BucketHandler;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -20,16 +18,14 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ChatComponentText;
-import net.minecraft.util.IIcon;
-import net.minecraft.util.MovingObjectPosition;
-import net.minecraft.util.StatCollector;
+import net.minecraft.util.*;
 import net.minecraft.world.World;
-import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.fluids.*;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -41,20 +37,6 @@ import java.util.List;
  */
 public class ItemFluidBucket extends Item implements IFluidContainerItem
 {
-    @SideOnly(Side.CLIENT)
-    public static IIcon fluidTextureWater;
-
-    @SideOnly(Side.CLIENT)
-    public static IIcon fluidTextureWhite;
-
-    @SideOnly(Side.CLIENT)
-    public static IIcon fluidTextureLava;
-
-    @SideOnly(Side.CLIENT)
-    public static IIcon blankTexture;
-
-    public static HashMap<String, IIcon> fluidToIconMap = new HashMap();
-
     //TODO rename to fluid.molten
     public static String[] supportedFluidTextures = new String[]{"milk", "blood", "slime.blue", "fuel", "aluminum.molten", "glue", "alubrass.molten", "alumite.molten", "angmallen.molten", "ardite.molten", "bronze.molten", "cobalt.molten", "copper.molten", "electrum.molten", "emerald.molten", "ender.molten", "enderium.molten", "glass.molten", "gold.molten", "invar.molten", "iron.molten", "lead.molten", "lumium.molten", "manyullyn.molten", "mithril.molten", "nickel.molten", "obsidian.molten", "pigiron.molten", "shiny.molten", "signalum.molten", "silver.molten", "steel.molten", "tin.molten", "oil", "redplasma"};
 
@@ -85,12 +67,12 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
     {
         if (!event.world.isRemote && event.action == PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK && event.entityPlayer.getCurrentEquippedItem() != null && event.entityPlayer.getCurrentEquippedItem().getItem() == this)
         {
-            TileEntity tile = event.world.getTileEntity(event.x, event.y, event.z);
+            TileEntity tile = event.world.getTileEntity(event.pos);
 
             if (tile instanceof IFluidHandler)
             {
                 boolean isBucketEmpty = this.isEmpty(event.entityPlayer.getCurrentEquippedItem());
-                ForgeDirection side = ForgeDirection.getOrientation(event.face);
+                EnumFacing side = event.face;
                 if (isBucketEmpty)
                 {
                     FluidStack drainedFromTank = ((IFluidHandler) tile).drain(side, getCapacity(event.entityPlayer.getCurrentEquippedItem()), false);
@@ -149,11 +131,7 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
         {
             if (movingobjectposition.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK)
             {
-                int i = movingobjectposition.blockX;
-                int j = movingobjectposition.blockY;
-                int k = movingobjectposition.blockZ;
-
-                TileEntity tile = world.getTileEntity(i, j, k);
+                TileEntity tile = world.getTileEntity(movingobjectposition.getBlockPos());
 
                 if (tile instanceof IFluidHandler)
                 {
@@ -161,7 +139,7 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
                 }
 
 
-                if (!world.canMineBlock(player, i, j, k))
+                if (!world.isBlockModifiable(player, movingobjectposition.getBlockPos()))
                 {
                     return itemstack;
                 }
@@ -169,75 +147,47 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
                 //Fill bucket code
                 if (isBucketEmpty)
                 {
-                    if (player.canPlayerEdit(i, j, k, movingobjectposition.sideHit, itemstack))
+                    if (player.canPlayerEdit(movingobjectposition.getBlockPos(), movingobjectposition.sideHit, itemstack))
                     {
-                        return pickupFluid(player, itemstack, world, i, j, k);
+                        return pickupFluid(player, itemstack, world, movingobjectposition.getBlockPos());
                     }
                 }
                 else //Empty bucket code
                 {
-                    Block block = world.getBlock(i, j, k);
+                    Block block = world.getBlockState(movingobjectposition.getBlockPos()).getBlock();
                     Material material = block.getMaterial();
 
-                    if (player.canPlayerEdit(i, j, k, movingobjectposition.sideHit, itemstack))
+                    if (player.canPlayerEdit(movingobjectposition.getBlockPos(), movingobjectposition.sideHit, itemstack))
                     {
                         if (BucketHandler.blockToHandler.containsKey(block))
                         {
                             BucketHandler handler = BucketHandler.blockToHandler.get(block);
                             if (handler != null)
                             {
-                                return handler.filledBucketClickBlock(player, itemstack, world, i, j, k, world.getBlockMetadata(i, j, k));
+                                return handler.filledBucketClickBlock(player, itemstack, world, movingobjectposition.getBlockPos());
                             }
                         }
 
-                        if (!material.isSolid() && block.isReplaceable(world, i, j, k))
+                        if (!material.isSolid() && block.isReplaceable(world, movingobjectposition.getBlockPos()))
                         {
-                            return placeFluid(player, itemstack, world, i, j, k);
+                            return placeFluid(player, itemstack, world, movingobjectposition.getBlockPos());
                         }
                     }
 
                     //Offset position based on side hit
-                    if (movingobjectposition.sideHit == 0)
-                    {
-                        --j;
-                    }
+                    BlockPos blockpos1 = movingobjectposition.getBlockPos().offset(movingobjectposition.sideHit);
 
-                    if (movingobjectposition.sideHit == 1)
-                    {
-                        ++j;
-                    }
-
-                    if (movingobjectposition.sideHit == 2)
-                    {
-                        --k;
-                    }
-
-                    if (movingobjectposition.sideHit == 3)
-                    {
-                        ++k;
-                    }
-
-                    if (movingobjectposition.sideHit == 4)
-                    {
-                        --i;
-                    }
-
-                    if (movingobjectposition.sideHit == 5)
-                    {
-                        ++i;
-                    }
-
-                    if (player.canPlayerEdit(i, j, k, movingobjectposition.sideHit, itemstack))
+                    if (player.canPlayerEdit(blockpos1, movingobjectposition.sideHit, itemstack))
                     {
                         if (BucketHandler.blockToHandler.containsKey(block))
                         {
                             BucketHandler handler = BucketHandler.blockToHandler.get(block);
                             if (handler != null)
                             {
-                                return handler.placeFluidClickBlock(player, itemstack, world, i, j, k, world.getBlockMetadata(i, j, k));
+                                return handler.placeFluidClickBlock(player, itemstack, world, blockpos1);
                             }
                         }
-                        return placeFluid(player, itemstack, world, i, j, k);
+                        return placeFluid(player, itemstack, world, blockpos1);
                     }
                 }
             }
@@ -270,57 +220,57 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
         }
     }
 
-    public ItemStack pickupFluid(EntityPlayer player, ItemStack itemstack, World world, int i, int j, int k)
+    public ItemStack pickupFluid(EntityPlayer player, ItemStack itemstack, World world, BlockPos pos)
     {
-        Block block = world.getBlock(i, j, k);
-        int l = world.getBlockMetadata(i, j, k);
+        IBlockState blockState = world.getBlockState(pos);
+        Block block = blockState.getBlock();
 
         if (BucketHandler.blockToHandler.containsKey(block))
         {
             BucketHandler handler = BucketHandler.blockToHandler.get(block);
             if (handler != null)
             {
-                return handler.emptyBucketClickBlock(player, itemstack, world, i, j, k, l);
+                return handler.emptyBucketClickBlock(player, itemstack, world, pos);
             }
         }
 
-        if (block == Blocks.water && l == 0)
+        if (block == Blocks.water && ((Integer)blockState.getValue(BlockLiquid.LEVEL)).intValue() == 0)
         {
-            if (world.setBlockToAir(i, j, k))
+            if (world.setBlockToAir(pos))
             {
                 ItemStack bucket = new ItemStack(this, 1, itemstack.getItemDamage());
                 fill(bucket, new FluidStack(FluidRegistry.WATER, FluidContainerRegistry.BUCKET_VOLUME), true);
                 return this.consumeBucket(itemstack, player, bucket);
             }
         }
-        else if (block == Blocks.lava && l == 0)
+        else if (block == Blocks.lava && ((Integer)blockState.getValue(BlockLiquid.LEVEL)).intValue() == 0)
         {
-            if (world.setBlockToAir(i, j, k))
+            if (world.setBlockToAir(pos))
             {
                 ItemStack bucket = new ItemStack(this, 1, itemstack.getItemDamage());
                 fill(bucket, new FluidStack(FluidRegistry.LAVA, FluidContainerRegistry.BUCKET_VOLUME), true);
                 return this.consumeBucket(itemstack, player, bucket);
             }
         }
-        else if (block instanceof IFluidBlock && ((IFluidBlock) block).canDrain(world, i, j, k))
+        else if (block instanceof IFluidBlock && ((IFluidBlock) block).canDrain(world, pos))
         {
-            int meta = world.getBlockMetadata(i, j, k);
-            FluidStack drainedFluid = ((IFluidBlock) block).drain(world, i, j, k, false);
+            FluidStack drainedFluid = ((IFluidBlock) block).drain(world, pos, false);
 
             //TODO allow partial fills
             if (isValidFluidStack(drainedFluid))
             {
                 ItemStack bucket = new ItemStack(this, 1, itemstack.getItemDamage());
-                drainedFluid = ((IFluidBlock) block).drain(world, i, j, k, true);
+                drainedFluid = ((IFluidBlock) block).drain(world, pos, true);
 
                 if (isValidFluidStack(drainedFluid))
                 {
                     fill(bucket, drainedFluid, true);
                     return this.consumeBucket(itemstack, player, bucket);
                 }
-                else if (world.getBlock(i, j, k) != block)
+                //Backup in case or error
+                else if (world.getBlockState(pos).getBlock() != block)
                 {
-                    world.setBlock(i, j, k, block, meta, 3);
+                    world.setBlockState(pos, blockState, 3);
                 }
             }
         }
@@ -335,25 +285,25 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
     /**
      * Attempts to place the liquid contained inside the bucket.
      */
-    public ItemStack placeFluid(EntityPlayer player, ItemStack itemstack, World world, int x, int y, int z)
+    public ItemStack placeFluid(EntityPlayer player, ItemStack itemstack, World world, BlockPos pos)
     {
-        Block block = world.getBlock(x, y, z);
+        Block block = world.getBlockState(pos).getBlock();
         //Material material = block.getMaterial();
         if (isFull(itemstack))
         {
-            if (world.isAirBlock(x, y, z) || block.isReplaceable(world, x, y, z))
+            if (world.isAirBlock(pos) || block.isReplaceable(world, pos))
             {
                 FluidStack stack = getFluid(itemstack);
                 if (stack != null && stack.getFluid() != null && stack.getFluid().canBePlacedInWorld() && stack.getFluid().getBlock() != null)
                 {
                     //TODO add support for oil and other fuel types to explode in the nether
-                    if (world.provider.isHellWorld && stack.getFluid().getUnlocalizedName().contains("water"))
+                    if (world.provider.doesWaterVaporize() && stack.getFluid().getUnlocalizedName().contains("water"))
                     {
-                        world.playSoundEffect((double) ((float) x + 0.5F), (double) ((float) y + 0.5F), (double) ((float) z + 0.5F), "random.fizz", 0.5F, 2.6F + (world.rand.nextFloat() - world.rand.nextFloat()) * 0.8F);
+                        world.playSoundEffect((double) ((float) pos.getX() + 0.5F), (double) ((float) pos.getY() + 0.5F), (double) ((float) pos.getZ() + 0.5F), "random.fizz", 0.5F, 2.6F + (world.rand.nextFloat() - world.rand.nextFloat()) * 0.8F);
 
                         for (int l = 0; l < 8; ++l)
                         {
-                            world.spawnParticle("largesmoke", (double) x + Math.random(), (double) y + Math.random(), (double) z + Math.random(), 0.0D, 0.0D, 0.0D);
+                            world.spawnParticle(EnumParticleTypes.EXPLOSION_LARGE, (double) pos.getX() + Math.random(), (double) pos.getY() + Math.random(), (double) pos.getZ() + Math.random(), 0.0D, 0.0D, 0.0D);
                         }
                         return consumeBucket(itemstack, player, new ItemStack(this, 1, itemstack.getItemDamage()));
                     }
@@ -365,15 +315,15 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
                         }
                         if (stack.getFluid() == FluidRegistry.WATER)
                         {
-                            world.setBlock(x, y, z, Blocks.flowing_water);
+                            world.setBlockState(pos, Blocks.flowing_water.getDefaultState());
                         }
                         else if (stack.getFluid() == FluidRegistry.LAVA)
                         {
-                            world.setBlock(x, y, z, Blocks.flowing_lava);
+                            world.setBlockState(pos, Blocks.flowing_lava.getDefaultState());
                         }
                         else
                         {
-                            world.setBlock(x, y, z, stack.getFluid().getBlock());
+                            world.setBlockState(pos, stack.getFluid().getBlock().getDefaultState());
                         }
                         return consumeBucket(itemstack, player, new ItemStack(this, 1, itemstack.getItemDamage()));
                     }
@@ -418,11 +368,11 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
     @Override
     public FluidStack getFluid(ItemStack container)
     {
-        if (container.stackTagCompound == null || !container.stackTagCompound.hasKey("Fluid"))
+        if (container.getTagCompound() == null || !container.getTagCompound().hasKey("Fluid"))
         {
             return null;
         }
-        return FluidStack.loadFluidStackFromNBT(container.stackTagCompound.getCompoundTag("Fluid"));
+        return FluidStack.loadFluidStackFromNBT(container.getTagCompound().getCompoundTag("Fluid"));
     }
 
     @Override
@@ -438,12 +388,12 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
         {
             if (!doFill)
             {
-                if (container.stackTagCompound == null || !container.stackTagCompound.hasKey("Fluid"))
+                if (container.getTagCompound() == null || !container.getTagCompound().hasKey("Fluid"))
                 {
                     return Math.min(getCapacity(container), resource.amount);
                 }
 
-                FluidStack stack = FluidStack.loadFluidStackFromNBT(container.stackTagCompound.getCompoundTag("Fluid"));
+                FluidStack stack = FluidStack.loadFluidStackFromNBT(container.getTagCompound().getCompoundTag("Fluid"));
 
                 if (stack == null)
                 {
@@ -458,29 +408,29 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
                 return Math.min(getCapacity(container) - stack.amount, resource.amount);
             }
 
-            if (container.stackTagCompound == null)
+            if (container.getTagCompound() == null)
             {
-                container.stackTagCompound = new NBTTagCompound();
+                container.setTagCompound(new NBTTagCompound());
             }
 
-            if (!container.stackTagCompound.hasKey("Fluid"))
+            if (!container.getTagCompound().hasKey("Fluid"))
             {
                 NBTTagCompound fluidTag = resource.writeToNBT(new NBTTagCompound());
 
                 if (getCapacity(container) < resource.amount)
                 {
                     fluidTag.setInteger("Amount", getCapacity(container));
-                    container.stackTagCompound.setTag("Fluid", fluidTag);
+                    container.getTagCompound().setTag("Fluid", fluidTag);
                     return getCapacity(container);
                 }
 
-                container.stackTagCompound.setTag("Fluid", fluidTag);
+                container.getTagCompound().setTag("Fluid", fluidTag);
                 return resource.amount;
             }
             else
             {
 
-                NBTTagCompound fluidTag = container.stackTagCompound.getCompoundTag("Fluid");
+                NBTTagCompound fluidTag = container.getTagCompound().getCompoundTag("Fluid");
                 FluidStack stack = FluidStack.loadFluidStackFromNBT(fluidTag);
 
                 if (!stack.isFluidEqual(resource))
@@ -499,7 +449,7 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
                     stack.amount = getCapacity(container);
                 }
 
-                container.stackTagCompound.setTag("Fluid", stack.writeToNBT(fluidTag));
+                container.getTagCompound().setTag("Fluid", stack.writeToNBT(fluidTag));
                 return filled;
             }
         }
@@ -509,12 +459,12 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
     @Override
     public FluidStack drain(ItemStack container, int maxDrain, boolean doDrain)
     {
-        if (container.stackTagCompound == null || !container.stackTagCompound.hasKey("Fluid"))
+        if (container.getTagCompound() == null || !container.getTagCompound().hasKey("Fluid"))
         {
             return null;
         }
 
-        FluidStack stack = FluidStack.loadFluidStackFromNBT(container.stackTagCompound.getCompoundTag("Fluid"));
+        FluidStack stack = FluidStack.loadFluidStackFromNBT(container.getTagCompound().getCompoundTag("Fluid"));
         if (stack == null)
         {
             return null;
@@ -526,18 +476,18 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
         {
             if (currentAmount == stack.amount)
             {
-                container.stackTagCompound.removeTag("Fluid");
+                container.getTagCompound().removeTag("Fluid");
 
-                if (container.stackTagCompound.hasNoTags())
+                if (container.getTagCompound().hasNoTags())
                 {
-                    container.stackTagCompound = null;
+                    container.setTagCompound(null);
                 }
                 return stack;
             }
 
-            NBTTagCompound fluidTag = container.stackTagCompound.getCompoundTag("Fluid");
+            NBTTagCompound fluidTag = container.getTagCompound().getCompoundTag("Fluid");
             fluidTag.setInteger("Amount", currentAmount - stack.amount);
-            container.stackTagCompound.setTag("Fluid", fluidTag);
+            container.getTagCompound().setTag("Fluid", fluidTag);
         }
         return stack;
     }
@@ -640,13 +590,14 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
                                     int y = (int) entity.posY + 2 - i;
                                     int z = (int) entity.posZ;
 
-                                    Block block = world.getBlock(x, y, z);
-                                    Block block2 = world.getBlock(x, y + 1, z);
-                                    if (block.isSideSolid(world, x, y, z, ForgeDirection.UP))
+                                    BlockPos pos = new BlockPos(x, y, z);
+                                    Block block = world.getBlockState(pos).getBlock();
+                                    Block block2 = world.getBlockState(pos.up()).getBlock();
+                                    if (block.isSideSolid(world, pos, EnumFacing.UP))
                                     {
-                                        if (block2.isAir(world, x, y + 1, z) || block2.isReplaceable(world, x, y + 1, z))
+                                        if (block2.isAir(world, pos.up()) || block2.isReplaceable(world, pos.up()))
                                         {
-                                            world.setBlock(x, y + 1, z, Blocks.air);
+                                            world.setBlockState(pos.up(), Blocks.fire.getDefaultState());
                                         }
                                     }
                                 }
@@ -779,7 +730,7 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
         return new ItemStack(FluidModule.bucket, 1, itemstack.getItemDamage());
     }
 
-    @Override
+    //@Override
     public boolean doesContainerItemLeaveCraftingGrid(ItemStack stack)
     {
         return isEmpty(stack);
@@ -791,83 +742,6 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
         return getFluid(stack) != null;
     }
 
-
-    @SideOnly(Side.CLIENT)
-    @Override
-    public void registerIcons(IIconRegister reg)
-    {
-        //Bucket textures
-        itemIcon = reg.registerIcon(FluidModule.DOMAIN + ":bucket");
-
-        //Fluid overlay defaults
-        fluidTextureWater = reg.registerIcon(FluidModule.DOMAIN + ":bucket.fluid");
-        fluidTextureWhite = reg.registerIcon(FluidModule.DOMAIN + ":bucket.fluid2");
-        fluidTextureLava = reg.registerIcon(FluidModule.DOMAIN + ":bucket.lava");
-        //Fluid overlay blank
-        blankTexture = reg.registerIcon(FluidModule.DOMAIN + ":blank");
-
-        //Supported fluids
-        for (String string : supportedFluidTextures)
-        {
-            fluidToIconMap.put(string, reg.registerIcon(FluidModule.DOMAIN + ":bucket." + string));
-        }
-
-        //Register defaults
-        fluidToIconMap.put("water", fluidTextureWater);
-        fluidToIconMap.put("lava", fluidTextureLava);
-
-        for (BucketMaterial material : BucketMaterialHandler.getMaterials())
-        {
-            material.registerIcons(reg);
-        }
-    }
-
-    @SideOnly(Side.CLIENT)
-    @Override
-    public IIcon getIcon(ItemStack stack, int pass)
-    {
-        if (pass == 0)
-        {
-            BucketMaterial material = BucketMaterialHandler.getMaterial(stack.getItemDamage());
-            if (material != null)
-            {
-                IIcon icon = material.getIcon(stack);
-                if (icon != null)
-                {
-                    return icon;
-                }
-            }
-        }
-        else if (pass == 1)
-        {
-            if (isEmpty(stack))
-            {
-                return blankTexture;
-            }
-            else
-            {
-                Fluid fluid = getFluid(stack).getFluid();
-                if (fluidToIconMap.containsKey(fluid.getName()))
-                {
-                    return fluidToIconMap.get(getFluid(stack).getFluid().getName());
-                }
-                else if (fluid.getColor() != 0xFFFFFF)
-                {
-                    return fluidTextureWhite;
-                }
-                else if (getFluid(stack).getFluid().getTemperature() > 600)
-                {
-                    return fluidTextureLava;
-                }
-                else
-                {
-                    return fluidTextureWater;
-                }
-            }
-        }
-        return super.getIcon(stack, pass);
-    }
-
     @Override
     public String getUnlocalizedName(ItemStack stack)
     {
@@ -877,12 +751,5 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
             return material.getUnlocalizedName(stack);
         }
         return super.getUnlocalizedName();
-    }
-
-    @SideOnly(Side.CLIENT)
-    @Override
-    public boolean requiresMultipleRenderPasses()
-    {
-        return true;
     }
 }
