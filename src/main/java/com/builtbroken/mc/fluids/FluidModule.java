@@ -51,19 +51,21 @@ public final class FluidModule
     public static final String BUILD_VERSION = "@BUILD@";
     public static final String VERSION = MAJOR_VERSION + "." + MINOR_VERSION + "." + REVISION_VERSION + "." + BUILD_VERSION;
 
+    public static final boolean runningAsDev = System.getProperty("development") != null && System.getProperty("development").equalsIgnoreCase("true");
+
     /** Information output thing */
     public static final Logger logger = LogManager.getLogger("SBM-NoMoreRain");
     public static Configuration config;
     public static Configuration bucketConfig;
 
-    @SidedProxy(clientSide = "com.builtbroken.mc.fluids.ClientProxy", serverSide = "com.builtbroken.mc.fluids.CommonProxy")
+    @SidedProxy(clientSide = "com.builtbroken.mc.fluids.client.ClientProxy", serverSide = "com.builtbroken.mc.fluids.CommonProxy")
     public static CommonProxy proxy;
 
     //Internal settings
     public static boolean GENERATE_MILK_FLUID = true;
 
-    //Load calls
-    private static boolean loadBucket = false;
+
+    public static BucketMaterial materialIron;
 
     //Content
     public static ItemFluidBucket bucket;
@@ -79,13 +81,6 @@ public final class FluidModule
 
     protected List<String> requestedFluids = new ArrayList();
 
-    /**
-     * Called to request that the bucket loads
-     */
-    public static void doLoadBucket()
-    {
-        loadBucket = true;
-    }
 
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event)
@@ -124,6 +119,15 @@ public final class FluidModule
             }
         }
 
+        //Register Item
+        this.bucket = new ItemFluidBucket(DOMAIN + ":bucket");
+        GameRegistry.registerItem(bucket);
+        MinecraftForge.EVENT_BUS.register(bucket);
+
+        //Test bucket, might add to actual content later
+        materialIron = new BucketMaterial(DOMAIN + ":ironBucket", new ResourceLocation(DOMAIN,"items/bucket.png"));
+        BucketMaterialHandler.addMaterial("iron", materialIron);
+
         GENERATE_MILK_FLUID = config.getBoolean("EnableMilkFluidGeneration", Configuration.CATEGORY_GENERAL, GENERATE_MILK_FLUID, "Will generate a fluid for milk allowing for the bucket to be used for gathering milk from cows");
         proxy.preInit();
     }
@@ -131,13 +135,6 @@ public final class FluidModule
     @Mod.EventHandler
     public void init(FMLInitializationEvent event)
     {
-        if (loadBucket)
-        {
-            this.bucket = new ItemFluidBucket(DOMAIN + ":bucket");
-            GameRegistry.registerItem(bucket, "veBucket", DOMAIN);
-            MinecraftForge.EVENT_BUS.register(bucket);
-        }
-
         if (Loader.isModLoaded("AgriCraft")) //No version for 1.8
         {
             //BucketHandler.addBucketHandler(com.InfinityRaider.AgriCraft.init.Blocks.blockWaterPad, new AgricraftWaterPad());

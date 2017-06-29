@@ -1,6 +1,7 @@
 package com.builtbroken.mc.fluids.bucket;
 
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -27,18 +28,19 @@ public class BucketMaterial
 
     /** Localization to translate, prefixed with 'item.' */
     public String localization;
-    /** Name of the texture to load, should be prefixed with domain 'domain:name' */
-    public String textureName;
 
     /** Name of the material, set on register */
     public String materialName;
     /** Item meta value this material is registered to */
     public int metaValue;
 
-    public BucketMaterial(String localization, String textureName)
+    protected ResourceLocation bucketResourceLocation;
+    protected ResourceLocation fluidResourceLocation;
+
+    public BucketMaterial(String localization, ResourceLocation bucketResourceLocation)
     {
         this.localization = localization;
-        this.textureName = textureName;
+        this.bucketResourceLocation = bucketResourceLocation;
     }
 
     /**
@@ -74,5 +76,15 @@ public class BucketMaterial
     public String getUnlocalizedName(ItemStack stack)
     {
         return "item." + localization;
+    }
+
+    public ResourceLocation getBucketResourceLocation()
+    {
+        return bucketResourceLocation;
+    }
+
+    public ResourceLocation getFluidResourceLocation()
+    {
+        return fluidResourceLocation;
     }
 }

@@ -43,6 +43,7 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
     public ItemFluidBucket(String name)
     {
         this.maxStackSize = 1;
+        this.setRegistryName(new ResourceLocation(FluidModule.DOMAIN, "veBucket"));
         this.setUnlocalizedName(name);
         this.setCreativeTab(CreativeTabs.tabMisc);
         this.setHasSubtypes(true);
@@ -234,7 +235,7 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
             }
         }
 
-        if (block == Blocks.water && ((Integer)blockState.getValue(BlockLiquid.LEVEL)).intValue() == 0)
+        if (block == Blocks.water && ((Integer) blockState.getValue(BlockLiquid.LEVEL)).intValue() == 0)
         {
             if (world.setBlockToAir(pos))
             {
@@ -243,7 +244,7 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
                 return this.consumeBucket(itemstack, player, bucket);
             }
         }
-        else if (block == Blocks.lava && ((Integer)blockState.getValue(BlockLiquid.LEVEL)).intValue() == 0)
+        else if (block == Blocks.lava && ((Integer) blockState.getValue(BlockLiquid.LEVEL)).intValue() == 0)
         {
             if (world.setBlockToAir(pos))
             {
