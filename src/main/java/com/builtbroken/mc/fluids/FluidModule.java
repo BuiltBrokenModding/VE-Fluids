@@ -7,31 +7,26 @@ import com.builtbroken.mc.fluids.bucket.BucketMaterialHandler;
 import com.builtbroken.mc.fluids.bucket.ItemFluidBucket;
 import com.builtbroken.mc.fluids.fluid.FluidHelper;
 import com.builtbroken.mc.fluids.fluid.Fluids;
-import com.builtbroken.mc.fluids.mods.pam.PamFreshWaterBucketRecipe;
-import com.builtbroken.mc.fluids.mods.pam.PamMilkBucketRecipe;
+import net.minecraft.block.Block;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
+import net.minecraft.item.ItemBlock;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.registry.GameRegistry;
-import net.minecraftforge.oredict.RecipeSorter;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
-
-import static net.minecraftforge.oredict.RecipeSorter.Category.SHAPED;
 
 /**
  * Module class for handling all interaction with fluids for Voltz Engine and it's sub mods
@@ -40,6 +35,7 @@ import static net.minecraftforge.oredict.RecipeSorter.Category.SHAPED;
  * Created by Dark(DarkGuardsman, Robert) on 3/2/2017.
  */
 @Mod(modid = FluidModule.DOMAIN, name = "VoltzEngine Fluids module", version = FluidModule.VERSION)
+@Mod.EventBusSubscriber(modid = FluidModule.DOMAIN)
 public final class FluidModule
 {
     public static final String DOMAIN = "vefluids";
@@ -96,16 +92,6 @@ public final class FluidModule
         //Handle default supported fluids
         Fluids.load(config);
 
-        //Fire registry events to allow mods to load content for this mod
-        MinecraftForge.EVENT_BUS.post(new FluidRegistryEvent.Pre());
-        MinecraftForge.EVENT_BUS.post(new FluidRegistryEvent.Post());
-        MinecraftForge.EVENT_BUS.post(new BucketMaterialRegistryEvent.Pre());
-        MinecraftForge.EVENT_BUS.post(new BucketMaterialRegistryEvent.Post());
-
-        //Register Item
-        registerItems();
-        registerBlocks();
-
         proxy.preInit();
 
         //Used to compare rendering
@@ -118,16 +104,28 @@ public final class FluidModule
         }
     }
 
-    public void registerItems()
+    @SubscribeEvent
+    public static void registerItems(RegistryEvent.Register<Item> event)
     {
-        GameRegistry.register(bucket = new ItemFluidBucket(DOMAIN + ":bucket"));
+        event.getRegistry().register(bucket = new ItemFluidBucket(DOMAIN + ":bucket"));
+        for (Block block : FluidHelper.generatedFluidBlocks)
+        {
+            event.getRegistry().register(new ItemBlock(block).setRegistryName(block.getRegistryName()));
+        }
     }
 
-    public void registerBlocks()
+    @SubscribeEvent
+    public static void registerBlocks(RegistryEvent.Register<Block> event)
     {
+        //Fire registry events to allow mods to load content for this mod
+        MinecraftForge.EVENT_BUS.post(new FluidRegistryEvent.Pre());
+        MinecraftForge.EVENT_BUS.post(new FluidRegistryEvent.Post());
+        MinecraftForge.EVENT_BUS.post(new BucketMaterialRegistryEvent.Pre());
+        MinecraftForge.EVENT_BUS.post(new BucketMaterialRegistryEvent.Post());
+
         for (Fluid fluid : FluidHelper.generatedFluids)
         {
-            FluidHelper.createBlockForFluidIfMissing(fluid);
+            FluidHelper.createBlockForFluidIfMissing(fluid, event);
         }
     }
 
@@ -146,7 +144,7 @@ public final class FluidModule
             material.handleConfig(bucketConfig);
         }
 
-        //Load recipe handling for other mods
+        /* Load recipe handling for other mods
         if (bucket != null)
         {
             //TODO add pam's harvest craft support
@@ -195,7 +193,7 @@ public final class FluidModule
                     }
                 }
             }
-        }
+        } */
         proxy.postInit();
         config.save();
     }

@@ -6,7 +6,9 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -34,6 +36,7 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 /**
@@ -58,15 +61,16 @@ public class ItemFluidBucket extends Item
         MinecraftForge.EVENT_BUS.register(this);
     }
 
+    @Override
     @SideOnly(Side.CLIENT)
-    public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean b)
+    public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> list, ITooltipFlag flagIn)
     {
         if (!isEmpty(stack))
         {
             list.add(I18n.format(getUnlocalizedName() + ".fluid.name") + ": " + getFluid(stack).getLocalizedName());
             list.add(I18n.format(getUnlocalizedName() + ".fluid.amount.name") + ": " + getFluid(stack).amount + "mb");
         }
-        else if (player.capabilities.isCreativeMode)
+        else if (Minecraft.getMinecraft().player.capabilities.isCreativeMode)
         {
             list.add("\u00a7c" + I18n.format(getUnlocalizedName() + ".creative.void"));
         }
@@ -631,26 +635,29 @@ public class ItemFluidBucket extends Item
 
     @SideOnly(Side.CLIENT)
     @Override
-    public void getSubItems(Item item, CreativeTabs tab, NonNullList<ItemStack> list)
+    public void getSubItems(CreativeTabs tab, NonNullList<ItemStack> list)
     {
-        for (BucketMaterial material : BucketMaterialHandler.getMaterials())
+        if(tab == getCreativeTab())
         {
-            list.add(new ItemStack(item, 1, material.metaValue));
-        }
-
-        for (Fluid fluid : FluidRegistry.getRegisteredFluids().values())
-        {
-            if (fluid != null)
+            for (BucketMaterial material : BucketMaterialHandler.getMaterials())
             {
-                ItemStack milkBucket = new ItemStack(item, 1, BucketMaterialHandler.getMaterials().iterator().next().metaValue);
-                fill(milkBucket, new FluidStack(fluid, Fluid.BUCKET_VOLUME), true);
-                list.add(milkBucket);
+                list.add(new ItemStack(this, 1, material.metaValue));
             }
-        }
 
-        for (BucketHandler handler : BucketHandler.bucketHandlers)
-        {
-            handler.getSubItems(item, list);
+            for (Fluid fluid : FluidRegistry.getRegisteredFluids().values())
+            {
+                if (fluid != null)
+                {
+                    ItemStack milkBucket = new ItemStack(this, 1, BucketMaterialHandler.getMaterials().iterator().next().metaValue);
+                    fill(milkBucket, new FluidStack(fluid, Fluid.BUCKET_VOLUME), true);
+                    list.add(milkBucket);
+                }
+            }
+
+            for (BucketHandler handler : BucketHandler.bucketHandlers)
+            {
+                handler.getSubItems(this, list);
+            }
         }
     }
 
