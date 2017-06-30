@@ -15,9 +15,9 @@ import java.awt.*;
  */
 public enum Fluids
 {
-    MILK("milk", new Color(235, 231, 210)),
-    FUEL("fuel", new Color(110, 109, 19)),
-    OIL("oil", new Color(27, 27, 27));
+    MILK("milk", new Color(235, 231, 210, 255)),
+    FUEL("fuel", new Color(110, 109, 19, 255)),
+    OIL("oil", new Color(27, 27, 27, 255));
 
     public final String name;
     public final Color color;
@@ -32,7 +32,7 @@ public enum Fluids
     {
         this.name = name;
         this.color = color;
-        this.colorInt = color != null ? color.getRGB() : 0xFFFFFF;
+        this.colorInt = color != null ? color.getRGB() : 0xFFFFFFFF;
     }
 
     public static void load(Configuration configuration)

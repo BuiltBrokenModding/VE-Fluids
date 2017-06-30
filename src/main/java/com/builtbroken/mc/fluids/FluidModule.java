@@ -70,6 +70,14 @@ public final class FluidModule
     /** Bucket item */
     public static ItemFluidBucket bucket;
 
+    public FluidModule()
+    {
+        if (runningAsDev)
+        {
+            FluidRegistry.enableUniversalBucket();
+        }
+    }
+
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent preInitEvent)
     {
@@ -100,6 +108,15 @@ public final class FluidModule
         registerBlocks();
 
         proxy.preInit();
+
+        //Used to compare rendering
+        if (runningAsDev)
+        {
+            for (Fluid fluid : FluidHelper.generatedFluids)
+            {
+                FluidRegistry.addBucketForFluid(fluid);
+            }
+        }
     }
 
     public void registerItems()

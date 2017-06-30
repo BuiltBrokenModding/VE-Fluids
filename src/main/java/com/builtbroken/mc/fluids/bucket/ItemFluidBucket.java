@@ -697,16 +697,12 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
             list.add(new ItemStack(item, 1, material.metaValue));
         }
 
-        ItemStack waterBucket = new ItemStack(item);
-        fill(waterBucket, new FluidStack(FluidRegistry.WATER, FluidContainerRegistry.BUCKET_VOLUME), true);
-        list.add(waterBucket);
-
-        for (String string : supportedFluidTextures)
+        for (Fluid fluid : FluidRegistry.getRegisteredFluids().values())
         {
-            if (FluidRegistry.getFluid(string) != null)
+            if (fluid != null)
             {
-                ItemStack milkBucket = new ItemStack(item);
-                fill(milkBucket, new FluidStack(FluidRegistry.getFluid(string), FluidContainerRegistry.BUCKET_VOLUME), true);
+                ItemStack milkBucket = new ItemStack(item, 1, BucketMaterialHandler.getMaterials().iterator().next().metaValue);
+                fill(milkBucket, new FluidStack(fluid, FluidContainerRegistry.BUCKET_VOLUME), true);
                 list.add(milkBucket);
             }
         }
