@@ -30,6 +30,9 @@ apply plugin: 'jacoco'
 
 println archivesBaseName 
 
+targetCompatibility = '1.8'
+sourceCompatibility = '1.8'
+
 dependencies 
 {
     testCompile 'junit:junit:4.11'

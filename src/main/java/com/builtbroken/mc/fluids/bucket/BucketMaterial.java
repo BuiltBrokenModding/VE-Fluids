@@ -3,8 +3,6 @@ package com.builtbroken.mc.fluids.bucket;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.config.Configuration;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
 /**
  * Handles customization for a material value
@@ -72,7 +70,6 @@ public class BucketMaterial
         leakFireChance = config.getFloat("FireChance", "BucketUsage." + materialName, leakFireChance, 0f, 1f, "How often to cause fire from molten fluids leaking");
     }
 
-    @SideOnly(Side.CLIENT)
     public String getUnlocalizedName(ItemStack stack)
     {
         return "item." + localization;
