@@ -13,7 +13,7 @@ public class FluidVE extends Fluid
 
     public FluidVE(String modID, String fluidName, String icon)
     {
-        super(fluidName, new ResourceLocation(modID, icon), new ResourceLocation(modID, icon + "_flowing"));
+        super(fluidName, new ResourceLocation(modID, "blocks/" + icon + "_still"), new ResourceLocation(modID, "blocks/" + icon + "_flow"));
     }
 
     public void setColor(int color)

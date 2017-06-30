@@ -9,7 +9,6 @@ import com.builtbroken.mc.fluids.fluid.FluidHelper;
 import com.builtbroken.mc.fluids.fluid.Fluids;
 import com.builtbroken.mc.fluids.mods.pam.PamFreshWaterBucketRecipe;
 import com.builtbroken.mc.fluids.mods.pam.PamMilkBucketRecipe;
-import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
@@ -112,11 +111,7 @@ public final class FluidModule
     {
         for (Fluid fluid : FluidHelper.generatedFluids)
         {
-            Block block = FluidHelper.createBlockForFluidIfMissing(fluid);
-            if (block != null)
-            {
-                GameRegistry.register(block);
-            }
+            FluidHelper.createBlockForFluidIfMissing(fluid);
         }
     }
 

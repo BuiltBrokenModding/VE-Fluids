@@ -22,6 +22,8 @@ import net.minecraftforge.fluids.IFluidBlock;
  */
 public class ClientProxy extends CommonProxy
 {
+    private static final String FLUID_MODEL_PATH = FluidModule.DOMAIN + ":fluid";
+
     @Override
     public void preInit()
     {
@@ -52,7 +54,7 @@ public class ClientProxy extends CommonProxy
 
         ModelBakery.registerItemVariants(item);
 
-        final ModelResourceLocation modelResourceLocation = new ModelResourceLocation(FluidModule.DOMAIN, fluidBlock.getFluid().getName());
+        final ModelResourceLocation modelResourceLocation = new ModelResourceLocation(FLUID_MODEL_PATH, fluidBlock.getFluid().getName());
 
         ModelLoader.setCustomMeshDefinition(item, new ItemMeshDefinition()
         {

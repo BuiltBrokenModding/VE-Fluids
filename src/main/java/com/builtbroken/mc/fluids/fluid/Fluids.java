@@ -15,7 +15,7 @@ import java.awt.*;
  */
 public enum Fluids
 {
-    MILK("milk", null),
+    MILK("milk", new Color(235, 231, 210)),
     FUEL("fuel", new Color(110, 109, 19)),
     OIL("oil", new Color(27, 27, 27));
 
@@ -32,7 +32,7 @@ public enum Fluids
     {
         this.name = name;
         this.color = color;
-        this.colorInt = color.getRGB();
+        this.colorInt = color != null ? color.getRGB() : 0xFFFFFF;
     }
 
     public static void load(Configuration configuration)
@@ -40,7 +40,7 @@ public enum Fluids
         FluidModule.logger.info("Generating fluids");
         for (Fluids data : values())
         {
-            if (data.generate || configuration.getBoolean(data.name, "GenerateFluid", false, "Set to true to load the fluid into the game."))
+            if (data.generate || configuration.getBoolean(data.name, "GenerateFluid", true, "Set to true to load the fluid into the game. Mods can override this behavior if they depend on the fluid."))
             {
                 FluidModule.logger.info("\tGenerating '" + data.name);
                 Fluid fluid = FluidHelper.createOrGetFluid(data.name, "fluid");
