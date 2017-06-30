@@ -25,7 +25,9 @@ import net.minecraftforge.client.model.*;
 import net.minecraftforge.common.model.IModelPart;
 import net.minecraftforge.common.model.IModelState;
 import net.minecraftforge.common.model.TRSRTransformation;
-import net.minecraftforge.fluids.*;
+import net.minecraftforge.fluids.Fluid;
+import net.minecraftforge.fluids.FluidRegistry;
+import net.minecraftforge.fluids.FluidStack;
 import org.apache.commons.lang3.tuple.Pair;
 
 import javax.vecmath.Matrix4f;
@@ -101,7 +103,7 @@ public class ModelFluidBucket implements IModel, IModelCustomData
     {
         ImmutableMap<TransformType, TRSRTransformation> transformMap = IPerspectiveAwareModel.MapWrapper.getTransforms(state);
 
-        if(transformMap.isEmpty())
+        if (transformMap.isEmpty())
         {
             TRSRTransformation thirdperson = get(0, 3, 1, 0, 0, 0, 0.55f);
             TRSRTransformation firstperson = get(1.13f, 3.2f, 1.13f, 0, -90, 25, 0.68f);
@@ -205,27 +207,24 @@ public class ModelFluidBucket implements IModel, IModelCustomData
         {
             ModelFluidBucket.BakedDynBucket model = (ModelFluidBucket.BakedDynBucket) originalModel;
 
-            //Get fluid from container
-            FluidStack fluidStack = FluidContainerRegistry.getFluidForFilledItem(stack);
-            if (fluidStack == null)
-            {
-                if (stack.getItem() instanceof IFluidContainerItem)
-                {
-                    fluidStack = ((IFluidContainerItem) stack.getItem()).getFluid(stack);
-                }
-            }
-
-            //Get fluid name for key
-            String fluidName = "";
-            if (fluidStack != null && fluidStack.getFluid() != null)
-            {
-                fluidName = fluidStack.getFluid().getName();
-            }
-
-            //Get material name for key
             String material = "iron";
+            String fluidName = "";
+
             if (stack.getItem() instanceof ItemFluidBucket)
             {
+                //Get fluid from container
+                FluidStack fluidStack = ((ItemFluidBucket) stack.getItem()).getFluid(stack);
+
+                //Get fluid name for key
+
+                if (fluidStack != null && fluidStack.getFluid() != null)
+                {
+                    fluidName = fluidStack.getFluid().getName();
+                }
+
+                //Get material name for key
+
+
                 BucketMaterial bucketMaterial = BucketMaterialHandler.getMaterial(stack.getItemDamage());
                 if (bucketMaterial != null)
                 {

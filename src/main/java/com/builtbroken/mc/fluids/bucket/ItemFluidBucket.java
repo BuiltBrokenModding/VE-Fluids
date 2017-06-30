@@ -26,9 +26,11 @@ import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.fluids.*;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fluids.Fluid;
+import net.minecraftforge.fluids.FluidRegistry;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.IFluidBlock;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -41,7 +43,7 @@ import java.util.List;
  * @author Dark
  * @version 7/25/2015.
  */
-public class ItemFluidBucket extends Item implements IFluidContainerItem
+public class ItemFluidBucket extends Item
 {
     //TODO rename to fluid.molten
     public static String[] supportedFluidTextures = new String[]{"milk", "blood", "slime.blue", "fuel", "aluminum.molten", "glue", "alubrass.molten", "alumite.molten", "angmallen.molten", "ardite.molten", "bronze.molten", "cobalt.molten", "copper.molten", "electrum.molten", "emerald.molten", "ender.molten", "enderium.molten", "glass.molten", "gold.molten", "invar.molten", "iron.molten", "lead.molten", "lumium.molten", "manyullyn.molten", "mithril.molten", "nickel.molten", "obsidian.molten", "pigiron.molten", "shiny.molten", "signalum.molten", "silver.molten", "steel.molten", "tin.molten", "oil", "redplasma"};
@@ -70,68 +72,10 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
         }
     }
 
-    @SubscribeEvent
-    public void onRightClickEvent(PlayerInteractEvent.RightClickBlock event)
-    {
-        if (!event.getWorld().isRemote && event.getItemStack() != null && event.getItemStack().getItem() == this)
-        {
-            TileEntity tile = event.getWorld().getTileEntity(event.getPos());
-
-            if (tile instanceof IFluidHandler)
-            {
-                boolean isBucketEmpty = this.isEmpty(event.getItemStack());
-                EnumFacing side = event.getFace();
-                if (isBucketEmpty)
-                {
-                    FluidStack drainedFromTank = ((IFluidHandler) tile).drain(side, getCapacity(event.getItemStack()), false);
-                    if (drainedFromTank != null && drainedFromTank.getFluid() != null && ((IFluidHandler) tile).canDrain(side, drainedFromTank.getFluid()))
-                    {
-                        if (event.getEntityPlayer().capabilities.isCreativeMode)
-                        {
-                            ((IFluidHandler) tile).drain(side, FluidContainerRegistry.BUCKET_VOLUME, true);
-                        }
-                        else
-                        {
-                            ItemStack bucket = new ItemStack(this, 1, event.getItemStack().getItemDamage());
-                            int filledIntoBucket = fill(bucket, drainedFromTank, true);
-                            if (filledIntoBucket > 0)
-                            {
-                                ((IFluidHandler) tile).drain(side, filledIntoBucket, true);
-                                event.getEntityPlayer().inventory.setInventorySlotContents(event.getEntityPlayer().inventory.currentItem, consumeBucket(event.getItemStack(), event.getEntityPlayer(), bucket));
-                                event.getEntityPlayer().inventoryContainer.detectAndSendChanges();
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    FluidStack containedFluid = getFluid(event.getItemStack());
-                    if (((IFluidHandler) tile).canFill(side, containedFluid.getFluid()))
-                    {
-                        int filled = ((IFluidHandler) tile).fill(side, containedFluid, true);
-                        if (!event.getEntityPlayer().capabilities.isCreativeMode)
-                        {
-                            drain(event.getItemStack(), filled, true);
-                            containedFluid = getFluid(event.getItemStack());
-                            if (containedFluid == null || containedFluid.amount == 0)
-                            {
-                                event.getEntityPlayer().inventory.setInventorySlotContents(event.getEntityPlayer().inventory.currentItem, consumeBucket(event.getItemStack(), event.getEntityPlayer(), new ItemStack(this, 1, event.getItemStack().getItemDamage())));
-                                event.getEntityPlayer().inventoryContainer.detectAndSendChanges();
-                            }
-                        }
-                    }
-                }
-                if (event.isCancelable())
-                {
-                    event.setCanceled(true);
-                }
-            }
-        }
-    }
-
     @Override
-    public ActionResult<ItemStack> onItemRightClick(ItemStack itemstack, World world, EntityPlayer player, EnumHand hand)
+    public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, EnumHand hand)
     {
+        ItemStack itemstack = player.getHeldItem(hand);
         boolean isBucketEmpty = this.isEmpty(itemstack);
         RayTraceResult movingobjectposition = this.rayTrace(world, player, isBucketEmpty);
 
@@ -212,13 +156,14 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
             return currentStack;
         }
         //If we only have one bucket consume and replace slot with new bucket
-        else if (--currentStack.stackSize <= 0)
+        else if ((currentStack.getCount() - 1) <= 0)
         {
             return newStack;
         }
         //If we have more than one bucket try to add the new one to the player's inventory
         else
         {
+            currentStack.setCount(currentStack.getCount() - 1);
             if (!player.inventory.addItemStackToInventory(newStack))
             {
                 player.dropItem(newStack, false);
@@ -247,7 +192,7 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
             if (world.setBlockToAir(pos))
             {
                 ItemStack bucket = new ItemStack(this, 1, itemstack.getItemDamage());
-                fill(bucket, new FluidStack(FluidRegistry.WATER, FluidContainerRegistry.BUCKET_VOLUME), true);
+                fill(bucket, new FluidStack(FluidRegistry.WATER, Fluid.BUCKET_VOLUME), true);
                 return this.consumeBucket(itemstack, player, bucket);
             }
         }
@@ -256,7 +201,7 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
             if (world.setBlockToAir(pos))
             {
                 ItemStack bucket = new ItemStack(this, 1, itemstack.getItemDamage());
-                fill(bucket, new FluidStack(FluidRegistry.LAVA, FluidContainerRegistry.BUCKET_VOLUME), true);
+                fill(bucket, new FluidStack(FluidRegistry.LAVA, Fluid.BUCKET_VOLUME), true);
                 return this.consumeBucket(itemstack, player, bucket);
             }
         }
@@ -287,7 +232,7 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
 
     private boolean isValidFluidStack(FluidStack drainedFluid)
     {
-        return drainedFluid != null && drainedFluid.getFluid() != null && drainedFluid.amount == FluidContainerRegistry.BUCKET_VOLUME;
+        return drainedFluid != null && drainedFluid.getFluid() != null && drainedFluid.amount == Fluid.BUCKET_VOLUME;
     }
 
     /**
@@ -340,7 +285,7 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
         }
         else if (!world.isRemote)
         {
-            player.addChatComponentMessage(new TextComponentTranslation(getUnlocalizedName() + ".volume.notEnoughForFullBlock"));
+            player.sendMessage(new TextComponentTranslation(getUnlocalizedName() + ".volume.notEnoughForFullBlock"));
         }
         return itemstack;
     }
@@ -373,7 +318,6 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
     }
 
     /* IFluidContainerItem */
-    @Override
     public FluidStack getFluid(ItemStack container)
     {
         if (container.getTagCompound() == null || !container.getTagCompound().hasKey("Fluid"))
@@ -383,13 +327,11 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
         return FluidStack.loadFluidStackFromNBT(container.getTagCompound().getCompoundTag("Fluid"));
     }
 
-    @Override
     public int getCapacity(ItemStack container)
     {
-        return FluidContainerRegistry.BUCKET_VOLUME;
+        return Fluid.BUCKET_VOLUME;
     }
 
-    @Override
     public int fill(ItemStack container, FluidStack resource, boolean doFill)
     {
         if (resource != null)
@@ -464,7 +406,6 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
         return 0;
     }
 
-    @Override
     public FluidStack drain(ItemStack container, int maxDrain, boolean doDrain)
     {
         if (container.getTagCompound() == null || !container.getTagCompound().hasKey("Fluid"))
@@ -609,7 +550,7 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
     @Override
     public boolean onEntityItemUpdate(EntityItem entityItem)
     {
-        FluidStack fluid = getFluid(entityItem.getEntityItem());
+        FluidStack fluid = getFluid(entityItem.getItem());
         if (fluid != null && fluid.getFluid() != null)
         {
             //Mod support
@@ -626,20 +567,20 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
             }
 
             //Base hot fluid support
-            if (entityItem.worldObj.getWorldTime() % 5 == 0)
+            if (entityItem.getEntityWorld().getWorldTime() % 5 == 0)
             {
-                BucketMaterial material = BucketMaterialHandler.getMaterial(entityItem.getEntityItem().getItemDamage());
+                BucketMaterial material = BucketMaterialHandler.getMaterial(entityItem.getItem().getItemDamage());
                 if (material != null)
                 {
                     if (material.preventHotFluidUsage && fluid.getFluid().getTemperature(fluid) > 400)
                     {
-                        if (material.damageBucketWithHotFluid && entityItem.worldObj.rand.nextFloat() < ((float) fluid.getFluid().getTemperature(fluid) / 1500f))
+                        if (material.damageBucketWithHotFluid && entityItem.getEntityWorld().rand.nextFloat() < ((float) fluid.getFluid().getTemperature(fluid) / 1500f))
                         {
                             //TODO play sound effect of items burning
-                            BucketMaterial damaged = material.getDamagedBucket(entityItem.getEntityItem());
+                            BucketMaterial damaged = material.getDamagedBucket(entityItem.getItem());
                             if (damaged != null)
                             {
-                                entityItem.getEntityItem().setItemDamage(damaged.metaValue);
+                                entityItem.getItem().setItemDamage(damaged.metaValue);
                             }
                         }
                         //TODO chance to catch area on fire around it
@@ -663,7 +604,7 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
 
             if (entity instanceof EntityCow && isEmpty(stack))
             {
-                if (player.worldObj.isRemote)
+                if (player.getEntityWorld().isRemote)
                 {
                     return true;
                 }
@@ -672,15 +613,15 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
                 if (fluid != null)
                 {
                     ItemStack newBucket = new ItemStack(this, 1, stack.getItemDamage());
-                    fill(newBucket, new FluidStack(fluid, FluidContainerRegistry.BUCKET_VOLUME), true);
-                    stack.stackSize--;
+                    fill(newBucket, new FluidStack(fluid, Fluid.BUCKET_VOLUME), true);
+                    stack.setCount(stack.getCount() - 1);
                     player.inventory.addItemStackToInventory(newBucket);
                     player.inventoryContainer.detectAndSendChanges();
                 }
                 else
                 {
                     ((EntityCow) entity).playLivingSound();
-                    player.addChatComponentMessage(new TextComponentTranslation(getUnlocalizedName() + ".error.fluid.milk.notRegistered"));
+                    player.sendMessage(new TextComponentTranslation(getUnlocalizedName() + ".error.fluid.milk.notRegistered"));
                 }
                 return true;
             }
@@ -690,7 +631,7 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
 
     @SideOnly(Side.CLIENT)
     @Override
-    public void getSubItems(Item item, CreativeTabs tab, List list)
+    public void getSubItems(Item item, CreativeTabs tab, NonNullList<ItemStack> list)
     {
         for (BucketMaterial material : BucketMaterialHandler.getMaterials())
         {
@@ -702,7 +643,7 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
             if (fluid != null)
             {
                 ItemStack milkBucket = new ItemStack(item, 1, BucketMaterialHandler.getMaterials().iterator().next().metaValue);
-                fill(milkBucket, new FluidStack(fluid, FluidContainerRegistry.BUCKET_VOLUME), true);
+                fill(milkBucket, new FluidStack(fluid, Fluid.BUCKET_VOLUME), true);
                 list.add(milkBucket);
             }
         }

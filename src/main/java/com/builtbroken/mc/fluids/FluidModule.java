@@ -15,7 +15,6 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.common.Loader;
@@ -164,7 +163,7 @@ public final class FluidModule
                             logger.error("Failed to find item harvestcraft:freshmilkItem");
                         }
 
-                        FluidStack milkFluidStack = new FluidStack(FluidRegistry.getFluid("milk"), FluidContainerRegistry.BUCKET_VOLUME);
+                        FluidStack milkFluidStack = new FluidStack(FluidRegistry.getFluid("milk"), Fluid.BUCKET_VOLUME);
                         for (BucketMaterial material : BucketMaterialHandler.getMaterials())
                         {
                             ItemStack milkBucket = new ItemStack(bucket, 1, material.metaValue);
@@ -185,7 +184,7 @@ public final class FluidModule
                             logger.error("Failed to find item harvestcraft:freshwaterItem");
                         }
 
-                        FluidStack waterStack = new FluidStack(FluidRegistry.WATER, FluidContainerRegistry.BUCKET_VOLUME);
+                        FluidStack waterStack = new FluidStack(FluidRegistry.WATER, Fluid.BUCKET_VOLUME);
                         for (BucketMaterial material : BucketMaterialHandler.getMaterials())
                         {
                             ItemStack milkBucket = new ItemStack(bucket, 1, material.metaValue);
