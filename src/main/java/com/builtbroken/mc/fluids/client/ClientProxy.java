@@ -31,7 +31,7 @@ public class ClientProxy extends CommonProxy
 
         ModelLoaderRegistry.registerLoader(new BucketModelLoader(FluidModule.DOMAIN));
 
-        final ModelResourceLocation location = new ModelResourceLocation(FluidModule.DOMAIN + ":bucket", "inventory");
+        final ModelResourceLocation location = new ModelResourceLocation(FluidModule.DOMAIN + ":ve_bucket", "inventory");
         ModelLoader.setCustomMeshDefinition(FluidModule.bucket, new ItemMeshDefinition()
         {
             @Override

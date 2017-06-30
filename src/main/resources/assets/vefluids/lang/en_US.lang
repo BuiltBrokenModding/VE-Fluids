@@ -1,4 +1,4 @@
-item.vefluids:bucket.name=Wooden Bucket
+item.vefluids:bucket.name=Bucket
 item.vefluids:bucket.fluid.name=Fluid
 item.vefluids:bucket.fluid.amount.name=Amount
 item.vefluids:bucket.error.fluid.milk.notRegistered=The cow seem to dislike the bucket
@@ -8,4 +8,4 @@ fluid.milk=Milk
 fluid.fuel=Fuel
 fluid.oil=Oil
 
-tile.woodenBucket:milk.name=Milk
+item.vefluids:ironBucket.name=Iron Bucket
