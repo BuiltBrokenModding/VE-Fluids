@@ -23,7 +23,11 @@ public class BucketModelLoader implements ICustomModelLoader
     @Override
     public boolean accepts(ResourceLocation modelLocation)
     {
-        return modelLocation.getResourceDomain().equals(domain) && modelLocation.getResourcePath().contains("bucket");
+        if(modelLocation.getResourceDomain().equals(domain) && modelLocation.getResourcePath().contains("bucket"))
+        {
+            return true;
+        }
+        return false;
     }
 
     @Override
