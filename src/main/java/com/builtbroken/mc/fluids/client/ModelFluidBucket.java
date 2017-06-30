@@ -78,15 +78,15 @@ public class ModelFluidBucket implements IModel, IModelCustomData
         ImmutableSet.Builder<ResourceLocation> builder = ImmutableSet.builder();
 
         builder.add(default_fluid_texture);
-        builder.add(default_fluid_texture);
+        builder.add(default_bucket_texture);
 
-        for(BucketMaterial material : BucketMaterialHandler.getMaterials())
+        for (BucketMaterial material : BucketMaterialHandler.getMaterials())
         {
-            if(material.getBucketResourceLocation() != null)
+            if (material.getBucketResourceLocation() != null)
             {
                 builder.add(material.getBucketResourceLocation());
             }
-            if(material.getFluidResourceLocation() != null)
+            if (material.getFluidResourceLocation() != null)
             {
                 builder.add(material.getFluidResourceLocation());
             }
@@ -163,6 +163,7 @@ public class ModelFluidBucket implements IModel, IModelCustomData
     private static final class BakedDynBucketOverrideHandler extends ItemOverrideList
     {
         public static final BakedDynBucketOverrideHandler INSTANCE = new BakedDynBucketOverrideHandler();
+
         private BakedDynBucketOverrideHandler()
         {
             super(ImmutableList.<ItemOverride>of());
@@ -171,6 +172,9 @@ public class ModelFluidBucket implements IModel, IModelCustomData
         @Override
         public IBakedModel handleItemState(IBakedModel originalModel, ItemStack stack, World world, EntityLivingBase entity)
         {
+            ModelFluidBucket.BakedDynBucket model = (ModelFluidBucket.BakedDynBucket) originalModel;
+
+            //Get fluid from container
             FluidStack fluidStack = FluidContainerRegistry.getFluidForFilledItem(stack);
             if (fluidStack == null)
             {
@@ -180,12 +184,14 @@ public class ModelFluidBucket implements IModel, IModelCustomData
                 }
             }
 
+            //Get fluid name for key
             String fluidName = "";
             if (fluidStack != null && fluidStack.getFluid() != null)
             {
                 fluidName = fluidStack.getFluid().getName();
             }
 
+            //Get material name for key
             String material = "iron";
             if (stack.getItem() instanceof ItemFluidBucket)
             {
@@ -196,10 +202,10 @@ public class ModelFluidBucket implements IModel, IModelCustomData
                 }
             }
 
+            //Create key for cache
             String key = material + ":" + fluidName;
 
-            ModelFluidBucket.BakedDynBucket model = (ModelFluidBucket.BakedDynBucket)originalModel;
-
+            //Populate cached value if it doesn't exist
             if (!model.cache.containsKey(key))
             {
                 IModel parent = model.parent.process(ImmutableMap.of("fluid", fluidName, "material", material));
@@ -260,14 +266,41 @@ public class ModelFluidBucket implements IModel, IModelCustomData
         @Override
         public List<BakedQuad> getQuads(IBlockState state, EnumFacing side, long rand)
         {
-            if(side == null) return quads;
+            if (side == null)
+            {
+                return quads;
+            }
             return ImmutableList.of();
         }
 
-        public boolean isAmbientOcclusion() { return true;  }
-        public boolean isGui3d() { return false; }
-        public boolean isBuiltInRenderer() { return false; }
-        public TextureAtlasSprite getParticleTexture() { return particle; }
-        public ItemCameraTransforms getItemCameraTransforms() { return ItemCameraTransforms.DEFAULT; }
+        @Override
+        public boolean isAmbientOcclusion()
+        {
+            return true;
+        }
+
+        @Override
+        public boolean isGui3d()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean isBuiltInRenderer()
+        {
+            return false;
+        }
+
+        @Override
+        public TextureAtlasSprite getParticleTexture()
+        {
+            return particle;
+        }
+
+        @Override
+        public ItemCameraTransforms getItemCameraTransforms()
+        {
+            return ItemCameraTransforms.DEFAULT;
+        }
     }
 }

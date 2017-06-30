@@ -1,0 +1,10 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "base": "vefluids:items/bucket",
+    "fluid": "vefluids:items/bucket.fluid2"
+  },
+  "custom": {
+    "material": "iron"
+  }
+}

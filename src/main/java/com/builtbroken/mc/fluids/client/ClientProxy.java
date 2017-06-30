@@ -3,6 +3,7 @@ package com.builtbroken.mc.fluids.client;
 import com.builtbroken.mc.fluids.CommonProxy;
 import com.builtbroken.mc.fluids.FluidModule;
 import com.builtbroken.mc.fluids.fluid.BlockSimpleFluid;
+import com.builtbroken.mc.fluids.fluid.FluidHelper;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.renderer.ItemMeshDefinition;
@@ -39,7 +40,7 @@ public class ClientProxy extends CommonProxy
         });
         ModelBakery.registerItemVariants(FluidModule.bucket, location);
 
-        for (BlockSimpleFluid block : FluidModule.generatedFluidBlocks)
+        for (BlockSimpleFluid block : FluidHelper.generatedFluidBlocks)
         {
             registerFluidModel(block);
         }

@@ -1,10 +1,16 @@
 {
-  "parent": "item/generated",
-  "textures": {
-    "base": "vefluids:items/bucket",
-    "fluid": "vefluids:items/bucket.fluid2"
-  },
-  "custom": {
-    "material": "iron"
+  "forge_marker": 1,
+  "variants": {
+    "inventory": {
+      "textures": {
+        "base": "vefluids:items/bucket",
+        "fluid": "vefluids:items/bucket.fluid2"
+      },
+      "model": "vefluids:bucket",
+      "transform": "forge:default-item",
+      "custom": {
+        "material": "iron"
+      }
+    }
   }
 }
