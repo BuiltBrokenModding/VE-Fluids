@@ -70,7 +70,7 @@ public class ItemFluidBucket extends Item
             list.add(I18n.format(getUnlocalizedName() + ".fluid.name") + ": " + getFluid(stack).getLocalizedName());
             list.add(I18n.format(getUnlocalizedName() + ".fluid.amount.name") + ": " + getFluid(stack).amount + "mb");
         }
-        else if (Minecraft.getMinecraft().player.capabilities.isCreativeMode)
+        else if (Minecraft.getMinecraft() != null && Minecraft.getMinecraft().player != null && Minecraft.getMinecraft().player.capabilities.isCreativeMode)
         {
             list.add("\u00a7c" + I18n.format(getUnlocalizedName() + ".creative.void"));
         }
@@ -637,7 +637,7 @@ public class ItemFluidBucket extends Item
     @Override
     public void getSubItems(CreativeTabs tab, NonNullList<ItemStack> list)
     {
-        if(tab == getCreativeTab())
+        if (tab == getCreativeTab())
         {
             for (BucketMaterial material : BucketMaterialHandler.getMaterials())
             {
