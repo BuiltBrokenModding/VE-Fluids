@@ -2,6 +2,7 @@ package com.builtbroken.mc.fluids.mods.aa;
 
 import com.builtbroken.mc.fluids.FluidModule;
 import com.builtbroken.mc.fluids.bucket.ItemFluidBucket;
+import net.minecraft.init.Items;
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -60,13 +61,16 @@ public class SlimeRiceBucketRecipe extends ShapedOreRecipe
                 if (i != 4)
                 {
                     stack = grid.getStackInSlot(i);
-                    if (stack.getItem() == this.rice)
+                    if(stack != null && stack.getItem() != Items.AIR)
                     {
-                        rice += 4;
-                    }
-                    else
-                    {
-                        return false;
+                        if (stack.getItem() == this.rice)
+                        {
+                            rice += 1;
+                        }
+                        else
+                        {
+                            return false;
+                        }
                     }
                 }
             }
