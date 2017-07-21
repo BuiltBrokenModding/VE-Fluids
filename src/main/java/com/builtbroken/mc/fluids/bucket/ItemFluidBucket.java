@@ -693,4 +693,11 @@ public class ItemFluidBucket extends Item
         }
         return super.getUnlocalizedName();
     }
+
+    public ItemStack getBucket(Fluid water)
+    {
+        ItemStack stack = new ItemStack(this);
+        fill(stack, new FluidStack(water, getCapacity(stack)), true);
+        return stack;
+    }
 }
