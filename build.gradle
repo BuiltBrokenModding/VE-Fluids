@@ -57,7 +57,7 @@ task makeChangelog(type: se.bjurr.gitchangelog.plugin.gradle.GitChangelogTask) {
   <h3>{{name}}</h3>
   <ul>
     {{#commits}}
-    <li> <a href="https://github.com/BuiltBrokenModding/SBM-woodenShears/commit/{{hash}}" target=_blank> {{{message}}}</a>
+    <li> <a href="https://github.com/VoltzEngine-Project/Fluids/commit/{{hash}}" target=_blank> {{{message}}}</a>
 </li>
     {{/commits}}
   </ul>
