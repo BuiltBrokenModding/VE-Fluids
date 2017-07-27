@@ -28,11 +28,12 @@ import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.IFluidBlock;
-import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -48,9 +49,6 @@ import java.util.List;
  */
 public class ItemFluidBucket extends Item
 {
-    //TODO rename to fluid.molten
-    public static String[] supportedFluidTextures = new String[]{"milk", "blood", "slime.blue", "fuel", "aluminum.molten", "glue", "alubrass.molten", "alumite.molten", "angmallen.molten", "ardite.molten", "bronze.molten", "cobalt.molten", "copper.molten", "electrum.molten", "emerald.molten", "ender.molten", "enderium.molten", "glass.molten", "gold.molten", "invar.molten", "iron.molten", "lead.molten", "lumium.molten", "manyullyn.molten", "mithril.molten", "nickel.molten", "obsidian.molten", "pigiron.molten", "shiny.molten", "signalum.molten", "silver.molten", "steel.molten", "tin.molten", "oil", "redplasma"};
-
     public ItemFluidBucket(String name)
     {
         this.maxStackSize = 1;
@@ -59,6 +57,12 @@ public class ItemFluidBucket extends Item
         this.setCreativeTab(CreativeTabs.MISC);
         this.setHasSubtypes(true);
         MinecraftForge.EVENT_BUS.register(this);
+    }
+
+    @Override
+    public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable NBTTagCompound nbt)
+    {
+        return new FluidCapabilityBucketWrapper(stack);
     }
 
     @Override
@@ -87,14 +91,14 @@ public class ItemFluidBucket extends Item
         {
             if (movingobjectposition.typeOfHit == RayTraceResult.Type.BLOCK)
             {
+                //Let fluid tiles handle there own logic
                 TileEntity tile = world.getTileEntity(movingobjectposition.getBlockPos());
-
-                if (tile instanceof IFluidHandler)
+                if (tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, movingobjectposition.sideHit))
                 {
                     return new ActionResult(EnumActionResult.PASS, itemstack);
                 }
 
-
+                //Do not edit if blocked
                 if (!world.isBlockModifiable(player, movingobjectposition.getBlockPos()))
                 {
                     return new ActionResult(EnumActionResult.PASS, itemstack);
@@ -669,12 +673,6 @@ public class ItemFluidBucket extends Item
             return null;
         }
         return new ItemStack(FluidModule.bucket, 1, itemstack.getItemDamage());
-    }
-
-    //@Override
-    public boolean doesContainerItemLeaveCraftingGrid(ItemStack stack)
-    {
-        return isEmpty(stack);
     }
 
     @Override
