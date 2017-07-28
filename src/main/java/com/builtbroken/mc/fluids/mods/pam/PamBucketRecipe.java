@@ -22,7 +22,7 @@ public class PamBucketRecipe extends ShapedOreRecipe
     {
         //TODO set group to match PAM's bucket group
         super(new ResourceLocation(FluidModule.DOMAIN, "pamBucket." + fluid.getName()), pamBucket, "   ", " B ", "   ", 'B', FluidModule.bucket);
-        setRegistryName(new ResourceLocation(FluidModule.DOMAIN, "bucket.pam.conversion"));
+        setRegistryName(new ResourceLocation(FluidModule.DOMAIN, "bucket.pam.conversion." + fluid.getName()));
         this.fluid = fluid;
     }
 
