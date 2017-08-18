@@ -1,8 +1,13 @@
 package com.builtbroken.mc.fluids.bucket;
 
+import com.builtbroken.mc.fluids.mods.BucketHandler;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.fml.common.registry.EntityEntry;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Handles customization for a material value
@@ -23,6 +28,11 @@ public class BucketMaterial
     public int amountToLeak = 1;
     public float chanceToLeak = 0.03f;
     public float leakFireChance = 0.4f;
+
+    public List<String> entityInteractionList = new ArrayList();
+    public boolean entityInteractionAllowList = false;
+
+    private BucketHandler handler;
 
     /** Localization to translate, prefixed with 'item.' */
     public String localization;
@@ -59,15 +69,34 @@ public class BucketMaterial
      */
     public void handleConfig(Configuration config)
     {
-        preventHotFluidUsage = config.getBoolean("PreventHotFluidUsage", "BucketUsage." + materialName, preventHotFluidUsage, "Enables settings that attempt to prevent players from wanting to use the bucket for moving hot fluids");
-        damageBucketWithHotFluid = config.getBoolean("DamageBucketWithHotFluid", "BucketUsage." + materialName, damageBucketWithHotFluid, "Will randomly destroy the bucket if it contains hot fluid, lava in other words");
-        burnEntityWithHotFluid = config.getBoolean("BurnPlayerWithHotFluid", "BucketUsage." + materialName, burnEntityWithHotFluid, "Will light the player on fire if the bucket contains a hot fluid, lava in other words");
-        enableFluidLeaking = config.getBoolean("Enable", "BucketUsage." + materialName, enableFluidLeaking, "Allows fluid to slowly leak out of the bucket as a nerf. Requested by Darkosto");
-        viscosityToIgnoreLeaking = config.getInt("MaxViscosity", "BucketUsage." + materialName, viscosityToIgnoreLeaking, -1, 10000, "At which point it the flow rate so slow that the leak is plugged, higher values are slower");
-        amountToLeak = config.getInt("MaxLeakAmount", "BucketUsage." + materialName, amountToLeak, 0, 10000, "How much can leak from the bucket each time a leak happens, number is max amount and is randomly ranged between 0 - #");
-        chanceToLeak = config.getFloat("LeakChance", "BucketUsage." + materialName, chanceToLeak, 0f, 1f, "What is the chance that a leak will happen, calculated each tick with high numbers being more often");
-        allowLeakToCauseFires = config.getBoolean("AllowFires", "BucketUsage." + materialName, allowLeakToCauseFires, "If molten fluid leaks, should there be a chance to cause fires?");
-        leakFireChance = config.getFloat("FireChance", "BucketUsage." + materialName, leakFireChance, 0f, 1f, "How often to cause fire from molten fluids leaking");
+        preventHotFluidUsage = config.getBoolean("PreventHotFluidUsage", getConfigCategory(), preventHotFluidUsage, "Enables settings that attempt to prevent players from wanting to use the bucket for moving hot fluids");
+        damageBucketWithHotFluid = config.getBoolean("DamageBucketWithHotFluid", getConfigCategory(), damageBucketWithHotFluid, "Will randomly destroy the bucket if it contains hot fluid, lava in other words");
+        burnEntityWithHotFluid = config.getBoolean("BurnPlayerWithHotFluid", getConfigCategory(), burnEntityWithHotFluid, "Will light the player on fire if the bucket contains a hot fluid, lava in other words");
+        enableFluidLeaking = config.getBoolean("Enable", getConfigCategory(), enableFluidLeaking, "Allows fluid to slowly leak out of the bucket as a nerf. Requested by Darkosto");
+        viscosityToIgnoreLeaking = config.getInt("MaxViscosity", getConfigCategory(), viscosityToIgnoreLeaking, -1, 10000, "At which point it the flow rate so slow that the leak is plugged, higher values are slower");
+        amountToLeak = config.getInt("MaxLeakAmount", getConfigCategory(), amountToLeak, 0, 10000, "How much can leak from the bucket each time a leak happens, number is max amount and is randomly ranged between 0 - #");
+        chanceToLeak = config.getFloat("LeakChance", getConfigCategory(), chanceToLeak, 0f, 1f, "What is the chance that a leak will happen, calculated each tick with high numbers being more often");
+        allowLeakToCauseFires = config.getBoolean("AllowFires", getConfigCategory(), allowLeakToCauseFires, "If molten fluid leaks, should there be a chance to cause fires?");
+        leakFireChance = config.getFloat("FireChance", getConfigCategory(), leakFireChance, 0f, 1f, "How often to cause fire from molten fluids leaking");
+
+        String[] entities = config.getStringList("EntityInteractionList", getConfigCategory(), new String[]{"entity1", "entity2"}, "List of entities for interaction, can be used as allow or block list by changing setting.");
+        entityInteractionAllowList = !config.getBoolean("EntityInteractionBlockList", getConfigCategory(), !entityInteractionAllowList, "Changes how entity interaction list is used, true will act as a block list, false will act as allow only.");
+
+        if (entities != null)
+        {
+            for (String s : entities)
+            {
+                if (s != null && !s.isEmpty())
+                {
+                    entityInteractionList.add(s.trim()); //TODO add debug to check if entity exists
+                }
+            }
+        }
+    }
+
+    protected final String getConfigCategory()
+    {
+        return "BucketUsage." + materialName;
     }
 
     public String getUnlocalizedName(ItemStack stack)
@@ -83,5 +112,28 @@ public class BucketMaterial
     public ResourceLocation getFluidResourceLocation()
     {
         return fluidResourceLocation;
+    }
+
+    /**
+     * Called to check if the bucket material will work with the entity
+     *
+     * @param entry
+     * @return
+     */
+    public boolean allowInteractionOfEntity(EntityEntry entry)
+    {
+        return entityInteractionAllowList ? entityInteractionList.contains(entry.getName()) : !entityInteractionList.contains(entry.getName());
+    }
+
+    /** Handler for this material, gets called first before any external handler */
+    public BucketHandler getHandler()
+    {
+        return handler;
+    }
+
+    public void setHandler(BucketHandler handler)
+    {
+        this.handler = handler;
+        BucketHandler.addBucketHandler(handler);
     }
 }

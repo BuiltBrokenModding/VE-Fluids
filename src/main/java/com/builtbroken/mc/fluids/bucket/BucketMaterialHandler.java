@@ -128,7 +128,7 @@ public class BucketMaterialHandler
      */
     public static BucketMaterial getMaterial(String name)
     {
-        return nameToMaterial.get(name);
+        return name != null ? nameToMaterial.get(name) : null;
     }
 
     public static BucketMaterial getMaterial(int meta)

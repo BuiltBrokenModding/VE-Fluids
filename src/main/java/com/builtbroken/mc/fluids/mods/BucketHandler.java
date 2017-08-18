@@ -1,5 +1,6 @@
 package com.builtbroken.mc.fluids.mods;
 
+import com.builtbroken.mc.fluids.FluidModule;
 import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -9,6 +10,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.fluids.Fluid;
 
 import java.util.ArrayList;
@@ -16,15 +18,29 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
+ * Handlers interaction between the bucket and it's enviroment
+ * <p>
+ * This class is designed for mod support but can be used to customize the bucket's logic
+ *
  * @see <a href="https://github.com/BuiltBrokenModding/VoltzEngine/blob/development/license.md">License</a> for what you can and can't do with the code.
  * Created by Dark(DarkGuardsman, Robert) on 5/28/2016.
  */
 public class BucketHandler
 {
+    /** Map of Block to handler that supports functionality for bucket interaction */
     public static final HashMap<Block, BucketHandler> blockToHandler = new HashMap();
+    /** Map of Item to handler that supports functionality for bucket interaction */
     public static final HashMap<Fluid, BucketHandler> fluidToHandler = new HashMap();
-    public static final HashMap<Class<? extends Entity>, BucketHandler> entityToHandler = new HashMap();
+
+    /** Map of Entity to handler that supports functionality for bucket interaction */
+    public static final HashMap<Class<? extends Entity>, List<BucketHandler>> entityToHandler = new HashMap();
+
+    /** List of all register bucket handlers */
     public static final List<BucketHandler> bucketHandlers = new ArrayList();
+
+    public final String mod;
+    public final String name;
+    public boolean isEnabled = true;
 
     public static void addBucketHandler(BucketHandler handler)
     {
@@ -32,24 +48,67 @@ public class BucketHandler
         {
             bucketHandlers.add(handler);
         }
-        //TODO add error checking
-        //TODO add overriding checking
     }
 
     public static void addBucketHandler(Block block, BucketHandler handler)
     {
         addBucketHandler(handler);
+        if (blockToHandler.containsKey(block) && blockToHandler.get(block) != null)
+        {
+            FluidModule.logger.error("Overriding handler '" + blockToHandler.get(block) + "' for block '" + block.getUnlocalizedName() + "' with " + handler);
+        }
         blockToHandler.put(block, handler);
-        //TODO add error checking
-        //TODO add overriding checking
     }
 
     public static void addBucketHandler(Fluid fluid, BucketHandler handler)
     {
         addBucketHandler(handler);
+        if (fluidToHandler.containsKey(fluid) && fluidToHandler.get(fluid) != null)
+        {
+            FluidModule.logger.error("Overriding BucketHandler '" + fluidToHandler.get(fluid) + "' for fluid '" + fluid.getUnlocalizedName() + "' with " + handler);
+        }
         fluidToHandler.put(fluid, handler);
-        //TODO add error checking
-        //TODO add overriding checking
+    }
+
+    public static void addBucketHandler(Class<? extends Entity> entity, BucketHandler handler)
+    {
+        addBucketHandler(handler);
+    }
+
+    public BucketHandler()
+    {
+        this(null, null);
+    }
+
+    public BucketHandler(String mod, String name)
+    {
+        this.mod = mod;
+        this.name = name;
+    }
+
+
+    /**
+     * Called to load settings about the the handler
+     *
+     * @param configuration
+     */
+    public void loadSettings(Configuration configuration)
+    {
+        if (name != null)
+        {
+            isEnabled = configuration.getBoolean("enable", getConfigCategory(), true, "Allows disabling bucket handling, disabling this could result in " +
+                    "logic not working and issues with the mod. Only disable this if you know what your doing.");
+        }
+    }
+
+    protected String getConfigCategory()
+    {
+        return "BucketHandler_" + getID();
+    }
+
+    public String getID()
+    {
+        return mod + ":" + name;
     }
 
     /**

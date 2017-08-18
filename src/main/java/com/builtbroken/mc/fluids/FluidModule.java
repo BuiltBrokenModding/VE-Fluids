@@ -7,6 +7,7 @@ import com.builtbroken.mc.fluids.bucket.BucketMaterialHandler;
 import com.builtbroken.mc.fluids.bucket.ItemFluidBucket;
 import com.builtbroken.mc.fluids.fluid.FluidHelper;
 import com.builtbroken.mc.fluids.fluid.Fluids;
+import com.builtbroken.mc.fluids.mods.BucketHandler;
 import com.builtbroken.mc.fluids.mods.aa.SlimeRiceBucketRecipe;
 import com.builtbroken.mc.fluids.mods.pam.PamBucketRecipe;
 import net.minecraft.block.Block;
@@ -148,6 +149,12 @@ public final class FluidModule
         {
             material.handleConfig(bucketConfig);
         }
+
+        for(BucketHandler handler : BucketHandler.bucketHandlers)
+        {
+            handler.loadSettings(config);
+        }
+
         proxy.postInit();
         config.save();
     }
