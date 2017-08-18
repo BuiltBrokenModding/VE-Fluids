@@ -5,6 +5,7 @@ import com.builtbroken.mc.fluids.mods.BucketHandler;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.state.BlockFaceShape;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.I18n;
@@ -114,8 +115,9 @@ public class ItemFluidBucket extends Item
                 }
                 else //Empty bucket code
                 {
-                    Block block = world.getBlockState(movingobjectposition.getBlockPos()).getBlock();
-                    Material material = block.getMaterial(world.getBlockState(movingobjectposition.getBlockPos()));
+                    final IBlockState state = world.getBlockState(movingobjectposition.getBlockPos());
+                    final Block block = state.getBlock();
+                    final Material material = state.getMaterial(); //TODO maybe add check to make sure block and state material match?
 
                     if (player.canPlayerEdit(movingobjectposition.getBlockPos(), movingobjectposition.sideHit, itemstack))
                     {
@@ -199,7 +201,7 @@ public class ItemFluidBucket extends Item
         {
             if (world.setBlockToAir(pos))
             {
-                ItemStack bucket = new ItemStack(this, 1, itemstack.getItemDamage());
+                ItemStack bucket = getEmptyBucket(itemstack);
                 fill(bucket, new FluidStack(FluidRegistry.WATER, Fluid.BUCKET_VOLUME), true);
                 return this.consumeBucket(itemstack, player, bucket);
             }
@@ -208,7 +210,7 @@ public class ItemFluidBucket extends Item
         {
             if (world.setBlockToAir(pos))
             {
-                ItemStack bucket = new ItemStack(this, 1, itemstack.getItemDamage());
+                ItemStack bucket = getEmptyBucket(itemstack);
                 fill(bucket, new FluidStack(FluidRegistry.LAVA, Fluid.BUCKET_VOLUME), true);
                 return this.consumeBucket(itemstack, player, bucket);
             }
@@ -220,7 +222,7 @@ public class ItemFluidBucket extends Item
             //TODO allow partial fills
             if (isValidFluidStack(drainedFluid))
             {
-                ItemStack bucket = new ItemStack(this, 1, itemstack.getItemDamage());
+                ItemStack bucket = getEmptyBucket(itemstack);
                 drainedFluid = ((IFluidBlock) block).drain(world, pos, true);
 
                 if (isValidFluidStack(drainedFluid))
@@ -266,7 +268,7 @@ public class ItemFluidBucket extends Item
                         {
                             world.spawnParticle(EnumParticleTypes.SMOKE_LARGE, (double) pos.getX() + Math.random(), (double) pos.getY() + Math.random(), (double) pos.getZ() + Math.random(), 0.0D, 0.0D, 0.0D, new int[0]);
                         }
-                        return consumeBucket(itemstack, player, new ItemStack(this, 1, itemstack.getItemDamage()));
+                        return consumeBucket(itemstack, player, getEmptyBucket(itemstack));
                     }
                     else
                     {
@@ -452,7 +454,7 @@ public class ItemFluidBucket extends Item
     @Override
     public int getItemStackLimit(ItemStack stack)
     {
-        return isEmpty(stack) ? Items.BUCKET.getItemStackLimit() : 1;
+        return isEmpty(stack) ? Items.BUCKET.getItemStackLimit(stack) : 1;
     }
 
     @Override
@@ -536,13 +538,18 @@ public class ItemFluidBucket extends Item
                                     int y = (int) entity.posY + 2 - i;
                                     int z = (int) entity.posZ;
 
-                                    BlockPos pos = new BlockPos(x, y, z);
-                                    Block block = world.getBlockState(pos).getBlock();
-                                    Block block2 = world.getBlockState(pos.up()).getBlock();
-                                    if (block.isSideSolid(world.getBlockState(pos), world, pos, EnumFacing.UP))
+                                    final BlockPos pos = new BlockPos(x, y, z);
+                                    final IBlockState state = world.getBlockState(pos);
+
+                                    final Block block2 = world.getBlockState(pos.up()).getBlock();
+
+                                    //Check if face of block one is solid
+                                    if (state.getBlockFaceShape(world, pos, EnumFacing.UP) == BlockFaceShape.SOLID)
                                     {
+                                        //Check that block two can be replaced
                                         if (block2.isAir(world.getBlockState(pos.up()), world, pos.up()) || block2.isReplaceable(world, pos.up()))
                                         {
+                                            //Create fire
                                             world.setBlockState(pos.up(), Blocks.FIRE.getDefaultState());
                                         }
                                     }
@@ -617,13 +624,12 @@ public class ItemFluidBucket extends Item
                     return true;
                 }
 
-                Fluid fluid = FluidRegistry.getFluid("milk");
+                final Fluid fluid = FluidRegistry.getFluid("milk");
                 if (fluid != null)
                 {
-                    ItemStack newBucket = new ItemStack(this, 1, stack.getItemDamage());
+                    ItemStack newBucket = getEmptyBucket(stack);
                     fill(newBucket, new FluidStack(fluid, Fluid.BUCKET_VOLUME), true);
-                    stack.setCount(stack.getCount() - 1);
-                    player.inventory.addItemStackToInventory(newBucket);
+                    player.inventory.setInventorySlotContents(player.inventory.currentItem, consumeBucket(stack, player, newBucket));
                     player.inventoryContainer.detectAndSendChanges();
                 }
                 else
@@ -635,6 +641,37 @@ public class ItemFluidBucket extends Item
             }
         }
         return false;
+    }
+
+    /**
+     * Helper to create a new empty bucket matching data of
+     * existing bucket without a fluid
+     *
+     * @param stack - item
+     * @return new item
+     */
+    public static ItemStack getEmptyBucket(ItemStack stack)
+    {
+        //TODO save any NBT data needed by the bucket
+        return new ItemStack(stack.getItem(), 1, stack.getItemDamage());
+    }
+
+    /**
+     * Helper to create a new bucket filled with fluid.
+     * Used mainly for recipe inputs and other actions
+     * that do not require having the exact material.
+     *
+     * @param fluidToFillWith
+     * @return new item with fluid
+     */
+    public ItemStack getBucket(Fluid fluidToFillWith)
+    {
+        ItemStack stack = new ItemStack(this);
+        if (fluidToFillWith != null) //TODO maybe do registry check?
+        {
+            fill(stack, new FluidStack(fluidToFillWith, getCapacity(stack)), true);
+        }
+        return stack;
     }
 
     @SideOnly(Side.CLIENT)
@@ -690,12 +727,5 @@ public class ItemFluidBucket extends Item
             return material.getUnlocalizedName(stack);
         }
         return super.getUnlocalizedName();
-    }
-
-    public ItemStack getBucket(Fluid water)
-    {
-        ItemStack stack = new ItemStack(this);
-        fill(stack, new FluidStack(water, getCapacity(stack)), true);
-        return stack;
     }
 }
