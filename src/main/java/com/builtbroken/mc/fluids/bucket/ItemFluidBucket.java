@@ -93,7 +93,7 @@ public class ItemFluidBucket extends Item
             {
                 //Let fluid tiles handle there own logic
                 TileEntity tile = world.getTileEntity(movingobjectposition.getBlockPos());
-                if (tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, movingobjectposition.sideHit))
+                if (tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, movingobjectposition.sideHit))
                 {
                     return new ActionResult(EnumActionResult.PASS, itemstack);
                 }
