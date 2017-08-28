@@ -9,24 +9,19 @@ import net.minecraft.client.renderer.block.model.ModelBakery;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.client.renderer.block.statemap.StateMapperBase;
 import net.minecraft.item.Item;
-import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.client.model.ModelLoaderRegistry;
 import net.minecraftforge.fluids.IFluidBlock;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.relauncher.Side;
 
 /**
  * @see <a href="https://github.com/BuiltBrokenModding/VoltzEngine/blob/development/license.md">License</a> for what you can and can't do with the code.
  * Created by Dark(DarkGuardsman, Robert) on 3/7/2017.
  */
-@Mod.EventBusSubscriber(modid = FluidModule.DOMAIN, value = Side.CLIENT)
 public class ClientProxy extends CommonProxy
 {
     private static final String FLUID_MODEL_PATH = FluidModule.DOMAIN + ":fluid";
-    @SubscribeEvent
-    public static void registerAllModels(ModelRegistryEvent event)
+
+    public void registerAllModels()
     {
         ModelLoaderRegistry.registerLoader(new BucketModelLoader(FluidModule.DOMAIN));
 

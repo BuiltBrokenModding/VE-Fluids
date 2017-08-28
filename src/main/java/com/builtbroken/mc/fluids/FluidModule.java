@@ -17,7 +17,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
-import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fml.common.Loader;
@@ -27,7 +26,6 @@ import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -108,20 +106,22 @@ public final class FluidModule
                 FluidRegistry.addBucketForFluid(fluid);
             }
         }
+
+        registerBlocks();
+        registerItems();
+        proxy.registerAllModels();
     }
 
-    @SubscribeEvent
-    public static void registerItems(RegistryEvent.Register<Item> event)
+    public static void registerItems()
     {
-        event.getRegistry().register(bucket = new ItemFluidBucket(DOMAIN + ":bucket"));
+        GameRegistry.register(bucket = new ItemFluidBucket(DOMAIN + ":bucket"));
         for (Block block : FluidHelper.generatedFluidBlocks)
         {
-            event.getRegistry().register(new ItemBlock(block).setRegistryName(block.getRegistryName()));
+            GameRegistry.register(new ItemBlock(block).setRegistryName(block.getRegistryName()));
         }
     }
 
-    @SubscribeEvent
-    public static void registerBlocks(RegistryEvent.Register<Block> event)
+    public static void registerBlocks()
     {
         //Fire registry events to allow mods to load content for this mod
         MinecraftForge.EVENT_BUS.post(new FluidRegistryEvent.Pre());
@@ -131,7 +131,7 @@ public final class FluidModule
 
         for (Fluid fluid : FluidHelper.generatedFluids)
         {
-            FluidHelper.createBlockForFluidIfMissing(fluid, event);
+            FluidHelper.createBlockForFluidIfMissing(fluid);
         }
     }
 
@@ -151,7 +151,7 @@ public final class FluidModule
             material.handleConfig(bucketConfig);
         }
 
-        for(BucketHandler handler : BucketHandler.bucketHandlers)
+        for (BucketHandler handler : BucketHandler.bucketHandlers)
         {
             handler.loadSettings(config);
         }

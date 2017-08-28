@@ -20,4 +20,9 @@ public class CommonProxy
     {
 
     }
+
+    public void registerAllModels()
+    {
+
+    }
 }
