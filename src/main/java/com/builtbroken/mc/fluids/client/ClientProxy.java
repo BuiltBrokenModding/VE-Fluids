@@ -2,16 +2,13 @@ package com.builtbroken.mc.fluids.client;
 
 import com.builtbroken.mc.fluids.CommonProxy;
 import com.builtbroken.mc.fluids.FluidModule;
-import com.builtbroken.mc.fluids.fluid.BlockSimpleFluid;
 import com.builtbroken.mc.fluids.fluid.FluidHelper;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.renderer.ItemMeshDefinition;
 import net.minecraft.client.renderer.block.model.ModelBakery;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.client.renderer.block.statemap.StateMapperBase;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
 import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.client.model.ModelLoaderRegistry;
 import net.minecraftforge.fluids.IFluidBlock;
@@ -24,54 +21,37 @@ public class ClientProxy extends CommonProxy
 {
     private static final String FLUID_MODEL_PATH = FluidModule.DOMAIN + ":fluid";
 
-    @Override
-    public void preInit()
+    public void registerAllModels()
     {
-        super.preInit();
-
         ModelLoaderRegistry.registerLoader(new BucketModelLoader(FluidModule.DOMAIN));
 
         final ModelResourceLocation location = new ModelResourceLocation(FluidModule.DOMAIN + ":ve_bucket", "inventory");
-        ModelLoader.setCustomMeshDefinition(FluidModule.bucket, new ItemMeshDefinition()
-        {
-            @Override
-            public ModelResourceLocation getModelLocation(ItemStack stack)
-            {
-                return location;
-            }
-        });
+        ModelLoader.setCustomMeshDefinition(FluidModule.bucket, stack -> location);
         ModelBakery.registerItemVariants(FluidModule.bucket, location);
 
-        for (BlockSimpleFluid block : FluidHelper.generatedFluidBlocks)
-        {
-            registerFluidModel(block);
-        }
+        FluidHelper.generatedFluidBlocks.forEach(ClientProxy::registerFluidModel);
     }
 
-    private void registerFluidModel(IFluidBlock fluidBlock)
+    private static void registerFluidModel(IFluidBlock fluidBlock)
     {
-        final Item item = Item.getItemFromBlock((Block) fluidBlock);
-
-        ModelBakery.registerItemVariants(item);
-
-        final ModelResourceLocation modelResourceLocation = new ModelResourceLocation(FLUID_MODEL_PATH, fluidBlock.getFluid().getName());
-
-        ModelLoader.setCustomMeshDefinition(item, new ItemMeshDefinition()
+        if(fluidBlock != null)
         {
-            @Override
-            public ModelResourceLocation getModelLocation(ItemStack stack)
-            {
-                return modelResourceLocation;
-            }
-        });
+            final Item item = Item.getItemFromBlock((Block) fluidBlock);
 
-        ModelLoader.setCustomStateMapper((Block) fluidBlock, new StateMapperBase()
-        {
-            @Override
-            protected ModelResourceLocation getModelResourceLocation(IBlockState p_178132_1_)
+            ModelBakery.registerItemVariants(item);
+
+            final ModelResourceLocation modelResourceLocation = new ModelResourceLocation(FLUID_MODEL_PATH, fluidBlock.getFluid().getName());
+
+            ModelLoader.setCustomMeshDefinition(item, stack -> modelResourceLocation);
+
+            ModelLoader.setCustomStateMapper((Block) fluidBlock, new StateMapperBase()
             {
-                return modelResourceLocation;
-            }
-        });
+                @Override
+                protected ModelResourceLocation getModelResourceLocation(IBlockState p_178132_1_)
+                {
+                    return modelResourceLocation;
+                }
+            });
+        }
     }
 }

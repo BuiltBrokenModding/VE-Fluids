@@ -1,7 +1,6 @@
 package com.builtbroken.mc.fluids.fluid;
 
 import com.builtbroken.mc.fluids.FluidModule;
-import net.minecraft.item.ItemBlock;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fml.common.registry.GameRegistry;
@@ -69,7 +68,6 @@ public class FluidHelper
             block.setRegistryName("veBlock" + name.substring(0, 1).toUpperCase() + name.substring(1, name.length()));
             FluidHelper.generatedFluidBlocks.add(block);
             GameRegistry.register(block);
-            GameRegistry.register(new ItemBlock(block).setRegistryName(block.getRegistryName()));
         }
     }
 }

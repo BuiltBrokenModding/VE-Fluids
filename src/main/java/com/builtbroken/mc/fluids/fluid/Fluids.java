@@ -43,14 +43,14 @@ public enum Fluids
             if (data.generate || configuration.getBoolean(data.name, "GenerateFluid", true, "Set to true to load the fluid into the game. Mods can override this behavior if they depend on the fluid."))
             {
                 FluidModule.logger.info("\tGenerating '" + data.name);
-                Fluid fluid = FluidHelper.createOrGetFluid(data.name, "fluid");
-                if (fluid != null)
+                data.fluid = FluidHelper.createOrGetFluid(data.name, "fluid");
+                if (data.fluid != null)
                 {
-                    if (fluid instanceof FluidVE)
+                    if (data.fluid instanceof FluidVE)
                     {
-                        ((FluidVE) fluid).setColor(data.colorInt);
+                        ((FluidVE) data.fluid).setColor(data.colorInt);
                     }
-                    FluidModule.logger.info("\t\t= " + fluid);
+                    FluidModule.logger.info("\t\t= " + data.fluid);
                 }
             }
         }

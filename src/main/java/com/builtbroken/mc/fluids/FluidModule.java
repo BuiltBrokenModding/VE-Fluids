@@ -7,17 +7,18 @@ import com.builtbroken.mc.fluids.bucket.BucketMaterialHandler;
 import com.builtbroken.mc.fluids.bucket.ItemFluidBucket;
 import com.builtbroken.mc.fluids.fluid.FluidHelper;
 import com.builtbroken.mc.fluids.fluid.Fluids;
-import com.builtbroken.mc.fluids.mods.pam.PamFreshWaterBucketRecipe;
-import com.builtbroken.mc.fluids.mods.pam.PamMilkBucketRecipe;
+import com.builtbroken.mc.fluids.mods.BucketHandler;
+import com.builtbroken.mc.fluids.mods.aa.SlimeRiceBucketRecipe;
+import com.builtbroken.mc.fluids.mods.pam.PamBucketRecipe;
+import net.minecraft.block.Block;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidRegistry;
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
@@ -26,13 +27,10 @@ import net.minecraftforge.fml.common.event.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.registry.GameRegistry;
-import net.minecraftforge.oredict.RecipeSorter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
-
-import static net.minecraftforge.oredict.RecipeSorter.Category.SHAPED;
 
 /**
  * Module class for handling all interaction with fluids for Voltz Engine and it's sub mods
@@ -97,16 +95,6 @@ public final class FluidModule
         //Handle default supported fluids
         Fluids.load(config);
 
-        //Fire registry events to allow mods to load content for this mod
-        MinecraftForge.EVENT_BUS.post(new FluidRegistryEvent.Pre());
-        MinecraftForge.EVENT_BUS.post(new FluidRegistryEvent.Post());
-        MinecraftForge.EVENT_BUS.post(new BucketMaterialRegistryEvent.Pre());
-        MinecraftForge.EVENT_BUS.post(new BucketMaterialRegistryEvent.Post());
-
-        //Register Item
-        registerItems();
-        registerBlocks();
-
         proxy.preInit();
 
         //Used to compare rendering
@@ -117,15 +105,29 @@ public final class FluidModule
                 FluidRegistry.addBucketForFluid(fluid);
             }
         }
+
+        registerBlocks();
+        registerItems();
+        proxy.registerAllModels();
     }
 
     public void registerItems()
     {
         GameRegistry.register(bucket = new ItemFluidBucket(DOMAIN + ":bucket"));
+        for (Block block : FluidHelper.generatedFluidBlocks)
+        {
+            GameRegistry.register(new ItemBlock(block).setRegistryName(block.getRegistryName()));
+        }
     }
 
     public void registerBlocks()
     {
+        //Fire registry events to allow mods to load content for this mod
+        MinecraftForge.EVENT_BUS.post(new FluidRegistryEvent.Pre());
+        MinecraftForge.EVENT_BUS.post(new FluidRegistryEvent.Post());
+        MinecraftForge.EVENT_BUS.post(new BucketMaterialRegistryEvent.Pre());
+        MinecraftForge.EVENT_BUS.post(new BucketMaterialRegistryEvent.Post());
+
         for (Fluid fluid : FluidHelper.generatedFluids)
         {
             FluidHelper.createBlockForFluidIfMissing(fluid);
@@ -135,6 +137,7 @@ public final class FluidModule
     @Mod.EventHandler
     public void init(FMLInitializationEvent event)
     {
+        registerRecipes();
         proxy.init();
     }
 
@@ -147,64 +150,71 @@ public final class FluidModule
             material.handleConfig(bucketConfig);
         }
 
-        //Load recipe handling for other mods
+        for (BucketHandler handler : BucketHandler.bucketHandlers)
+        {
+            handler.loadSettings(config);
+        }
+
+        proxy.postInit();
+        config.save();
+    }
+
+    public static void registerRecipes()
+    {
+        /* Load recipe handling for other mods */
         if (bucket != null)
         {
             //TODO add pam's harvest craft support
             if (Loader.isModLoaded("harvestcraft"))
             {
+                //RecipeSorter.register(DOMAIN + ":woodenBucketFreshMilk", PamBucketRecipe.class, SHAPED, "after:minecraft:shaped");
                 if (config.getBoolean("EnableRegisteringMilkBucket", "PamHarvestCraftSupport", true, "Registers the milk bucket to the ore dictionary to be used in Pam's Harvest Craft recipes"))
                 {
-                    RecipeSorter.register(DOMAIN + ":woodenBucketFreshMilk", PamMilkBucketRecipe.class, SHAPED, "after:minecraft:shaped");
                     if (FluidRegistry.getFluid("milk") != null)
                     {
-                        Item itemFreshMilk = (Item) Item.REGISTRY.getObject(new ResourceLocation("harvestcraft:freshmilkItem"));
+                        Item itemFreshMilk = Item.REGISTRY.getObject(new ResourceLocation("harvestcraft:freshmilkItem"));
                         if (itemFreshMilk == null)
                         {
                             logger.error("Failed to find item harvestcraft:freshmilkItem");
                         }
-
-                        FluidStack milkFluidStack = new FluidStack(FluidRegistry.getFluid("milk"), FluidContainerRegistry.BUCKET_VOLUME);
-                        for (BucketMaterial material : BucketMaterialHandler.getMaterials())
+                        else
                         {
-                            ItemStack milkBucket = new ItemStack(bucket, 1, material.metaValue);
-                            bucket.fill(milkBucket, milkFluidStack, true);
-
-                            GameRegistry.addRecipe(new PamMilkBucketRecipe(milkBucket, new ItemStack(itemFreshMilk, 4, 0)));
+                            GameRegistry.addRecipe(new PamBucketRecipe(new ItemStack(itemFreshMilk, 4, 0), Fluids.MILK.fluid));
                         }
                     }
                 }
                 if (config.getBoolean("EnableRegisteringFreshWaterBucket", "PamHarvestCraftSupport", true, "Registers the water bucket to the ore dictionary to be used in Pam's Harvest Craft recipes"))
                 {
-                    RecipeSorter.register(DOMAIN + ":woodenBucketFreshMilk", PamFreshWaterBucketRecipe.class, SHAPED, "after:minecraft:shaped");
-                    if (FluidRegistry.getFluid("milk") != null)
+                    Item itemFreshWater = Item.REGISTRY.getObject(new ResourceLocation("harvestcraft:freshwaterItem"));
+                    if (itemFreshWater == null)
                     {
-                        Item itemFreshWater = (Item) Item.REGISTRY.getObject(new ResourceLocation("harvestcraft:freshwaterItem"));
-                        if (itemFreshWater == null)
-                        {
-                            logger.error("Failed to find item harvestcraft:freshwaterItem");
-                        }
-
-                        FluidStack waterStack = new FluidStack(FluidRegistry.WATER, FluidContainerRegistry.BUCKET_VOLUME);
-                        for (BucketMaterial material : BucketMaterialHandler.getMaterials())
-                        {
-                            ItemStack milkBucket = new ItemStack(bucket, 1, material.metaValue);
-                            bucket.fill(milkBucket, waterStack, true);
-
-                            GameRegistry.addRecipe(new PamFreshWaterBucketRecipe(milkBucket, new ItemStack(itemFreshWater, 1, 0)));
-                        }
+                        logger.error("Failed to find item harvestcraft:freshwaterItem");
+                    }
+                    else
+                    {
+                        GameRegistry.addRecipe(new PamBucketRecipe(new ItemStack(itemFreshWater, 4, 0), FluidRegistry.WATER));
                     }
                 }
             }
+
+            if (Loader.isModLoaded("actuallyadditions"))
+            {
+                Item itemRice = Item.REGISTRY.getObject(new ResourceLocation("actuallyadditions:item_misc"));
+                if (itemRice == null)
+                {
+                    logger.error("Failed to find items from Actual additions required to register slime ball recipe");
+                }
+                else
+                {
+                    GameRegistry.addRecipe(new SlimeRiceBucketRecipe(itemRice));
+                }
+            }
         }
-        proxy.postInit();
-        config.save();
     }
 
     @Mod.EventHandler
     public void loadCompleted(FMLLoadCompleteEvent event)
     {
-
         //Save config
         BucketMaterialHandler.save(bucketConfig);
         bucketConfig.save();
