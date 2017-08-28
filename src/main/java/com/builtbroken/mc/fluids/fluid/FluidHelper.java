@@ -1,10 +1,10 @@
 package com.builtbroken.mc.fluids.fluid;
 
 import com.builtbroken.mc.fluids.FluidModule;
-import net.minecraft.item.ItemBlock;
+import net.minecraft.block.Block;
+import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
-import net.minecraftforge.fml.common.registry.GameRegistry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,7 +60,7 @@ public class FluidHelper
         return fluid;
     }
 
-    public static void createBlockForFluidIfMissing(Fluid fluid)
+    public static void createBlockForFluidIfMissing(Fluid fluid, RegistryEvent.Register<Block> event)
     {
         if (fluid.getBlock() == null)
         {
@@ -68,8 +68,7 @@ public class FluidHelper
             BlockSimpleFluid block = new BlockSimpleFluid(fluid, name);
             block.setRegistryName("veBlock" + name.substring(0, 1).toUpperCase() + name.substring(1, name.length()));
             FluidHelper.generatedFluidBlocks.add(block);
-            GameRegistry.register(block);
-            GameRegistry.register(new ItemBlock(block).setRegistryName(block.getRegistryName()));
+            event.getRegistry().register(block);
         }
     }
 }

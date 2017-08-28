@@ -1,22 +1,27 @@
 package com.builtbroken.mc.fluids.mods.pam;
 
+import com.builtbroken.mc.fluids.FluidModule;
 import com.builtbroken.mc.fluids.bucket.ItemFluidBucket;
-import com.builtbroken.mc.fluids.fluid.Fluids;
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.ShapedRecipes;
 import net.minecraft.world.World;
+import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.oredict.ShapedOreRecipe;
 
 /**
  * Simple recipe to handle integration with Pam's Harvestcraft fresh milk buckets
  * Created by Dark on 8/24/2015.
  */
-public class PamMilkBucketRecipe extends ShapedRecipes
+public class PamBucketRecipe extends ShapedOreRecipe
 {
-    public PamMilkBucketRecipe(ItemStack bucket, ItemStack pamBucket)
+    Fluid fluid;
+
+    public PamBucketRecipe(ItemStack pamBucket, Fluid fluid)
     {
-        super(3, 3, new ItemStack[]{null, null, null, null, bucket, null, null, null, null}, pamBucket);
+        //TODO set group to match PAM's bucket group
+        super(pamBucket, "   ", " B ", "   ", 'B', FluidModule.bucket);
+        this.fluid = fluid;
     }
 
     @Override
@@ -29,7 +34,7 @@ public class PamMilkBucketRecipe extends ShapedRecipes
             {
                 ItemFluidBucket item = (ItemFluidBucket) grid.getStackInSlot(4).getItem();
                 FluidStack fluidStack = item.getFluid(stack);
-                return fluidStack != null && fluidStack.getFluid() == Fluids.MILK.fluid;
+                return fluidStack != null && fluidStack.getFluid() == fluid;
             }
         }
         return false;
