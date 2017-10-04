@@ -8,7 +8,7 @@ import net.minecraftforge.fluids.Fluid;
  */
 public class FluidVE extends Fluid
 {
-    protected int color = 0xFFFFFF;
+    protected int color = 0xFFFFFFFF;
 
     public FluidVE(String fluidName)
     {

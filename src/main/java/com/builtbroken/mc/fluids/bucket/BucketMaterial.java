@@ -5,6 +5,7 @@ import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.IIcon;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.config.Configuration;
 
 /**
@@ -27,24 +28,33 @@ public class BucketMaterial
     public float chanceToLeak = 0.03f;
     public float leakFireChance = 0.4f;
 
-    /** Inventory icon */
-    @SideOnly(Side.CLIENT)
-    public IIcon icon;
-
     /** Localization to translate, prefixed with 'item.' */
     public String localization;
-    /** Name of the texture to load, should be prefixed with domain 'domain:name' */
-    public String textureName;
 
     /** Name of the material, set on register */
     public String materialName;
     /** Item meta value this material is registered to */
     public int metaValue;
 
-    public BucketMaterial(String localization, String textureName)
+    protected ResourceLocation bucketResourceLocation;
+    protected ResourceLocation fluidResourceLocation;
+
+    /** Inventory icon */
+    @SideOnly(Side.CLIENT)
+    private IIcon bucketIcon;
+    @SideOnly(Side.CLIENT)
+    private IIcon fluidIcon;
+
+    public BucketMaterial(String localization, ResourceLocation bucketResourceLocation)
     {
         this.localization = localization;
-        this.textureName = textureName;
+        this.bucketResourceLocation = bucketResourceLocation;
+    }
+
+    public BucketMaterial(String localization, String bucketResourceLocation)
+    {
+        this.localization = localization;
+        this.bucketResourceLocation = new ResourceLocation(bucketResourceLocation);
     }
 
     /**
@@ -77,20 +87,44 @@ public class BucketMaterial
     }
 
     @SideOnly(Side.CLIENT)
-    public void registerIcons(IIconRegister register)
-    {
-        icon = register.registerIcon(textureName);
-    }
-
-    @SideOnly(Side.CLIENT)
-    public IIcon getIcon(ItemStack stack)
-    {
-        return icon;
-    }
-
-    @SideOnly(Side.CLIENT)
     public String getUnlocalizedName(ItemStack stack)
     {
         return "item." + localization;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public void registerIcons(IIconRegister register)
+    {
+        //this is using 1.8 code for texture location that was back ported, thus we need to modify it to work with 1.7
+        if (getBucketResourceLocation() != null)
+        {
+            bucketIcon = register.registerIcon(getBucketResourceLocation().toString().replace("items/", ""));
+        }
+        if (getFluidResourceLocation() != null)
+        {
+            fluidIcon = register.registerIcon(getFluidResourceLocation().toString().replace("items/", ""));
+        }
+    }
+
+    @SideOnly(Side.CLIENT)
+    public IIcon getBucketIcon(ItemStack stack)
+    {
+        return bucketIcon;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public IIcon getFluidIcon(ItemStack stack)
+    {
+        return bucketIcon;
+    }
+
+    public ResourceLocation getBucketResourceLocation()
+    {
+        return bucketResourceLocation;
+    }
+
+    public ResourceLocation getFluidResourceLocation()
+    {
+        return fluidResourceLocation;
     }
 }

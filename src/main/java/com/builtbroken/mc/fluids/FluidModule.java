@@ -1,26 +1,27 @@
 package com.builtbroken.mc.fluids;
 
+import com.builtbroken.mc.fluids.api.reg.BucketMaterialRegistryEvent;
+import com.builtbroken.mc.fluids.api.reg.FluidRegistryEvent;
 import com.builtbroken.mc.fluids.bucket.BucketMaterial;
 import com.builtbroken.mc.fluids.bucket.BucketMaterialHandler;
 import com.builtbroken.mc.fluids.bucket.ItemFluidBucket;
-import com.builtbroken.mc.fluids.fluid.BlockSimpleFluid;
-import com.builtbroken.mc.fluids.fluid.FluidVE;
-import com.builtbroken.mc.fluids.mods.BucketHandler;
-import com.builtbroken.mc.fluids.mods.agricraft.AgricraftWaterPad;
-import com.builtbroken.mc.fluids.mods.agricraft.AgricraftWaterPadFilled;
+import com.builtbroken.mc.fluids.fluid.FluidHelper;
+import com.builtbroken.mc.fluids.fluid.Fluids;
 import com.builtbroken.mc.fluids.mods.pam.PamFreshWaterBucketRecipe;
 import com.builtbroken.mc.fluids.mods.pam.PamMilkBucketRecipe;
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.SidedProxy;
-import cpw.mods.fml.common.event.*;
+import cpw.mods.fml.common.event.FMLInitializationEvent;
+import cpw.mods.fml.common.event.FMLLoadCompleteEvent;
+import cpw.mods.fml.common.event.FMLPostInitializationEvent;
+import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.registry.GameRegistry;
-import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
-import net.minecraftforge.common.config.Property;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidRegistry;
@@ -29,10 +30,7 @@ import net.minecraftforge.oredict.RecipeSorter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.awt.*;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 import static net.minecraftforge.oredict.RecipeSorter.Category.SHAPED;
 
@@ -53,129 +51,84 @@ public final class FluidModule
     public static final String BUILD_VERSION = "@BUILD@";
     public static final String VERSION = MAJOR_VERSION + "." + MINOR_VERSION + "." + REVISION_VERSION + "." + BUILD_VERSION;
 
+    /** VM argument to trigger running of debug only options */
+    public static final boolean runningAsDev = System.getProperty("development") != null && System.getProperty("development").equalsIgnoreCase("true");
+
     /** Information output thing */
     public static final Logger logger = LogManager.getLogger("SBM-NoMoreRain");
+    /** Main config */
     public static Configuration config;
+    /** Bucket material config */
     public static Configuration bucketConfig;
 
     @SidedProxy(clientSide = "com.builtbroken.mc.fluids.ClientProxy", serverSide = "com.builtbroken.mc.fluids.CommonProxy")
     public static CommonProxy proxy;
 
-    //Internal settings
-    public static boolean GENERATE_MILK_FLUID = true;
+    /** Test material that mimics the vanilla bucket */
+    public static BucketMaterial materialIron;
 
-    //Load calls
-    private static boolean loadBucket = false;
-
-    //Content
+    /** Bucket item */
     public static ItemFluidBucket bucket;
-
+    @Deprecated
     public static Fluid fluid_milk;
 
-    public static String[] supportedFluidsForGeneration = new String[]{"fuel", "oil"};
-    public static int[] fluidColors = new int[]
-            {
-                    new Color(110, 109, 19).getRGB(),
-                    new Color(27, 27, 27).getRGB()
-            };
-
-    protected List<String> requestedFluids = new ArrayList();
-
-    /**
-     * Called to request that the bucket loads
-     */
-    public static void doLoadBucket()
-    {
-        loadBucket = true;
-    }
-
     @Mod.EventHandler
-    public void preInit(FMLPreInitializationEvent event)
+    public void preInit(FMLPreInitializationEvent preInitEvent)
     {
-        config = new Configuration(new File(event.getModConfigurationDirectory(), "bbm/Fluid_Module/core.cfg"));
+        config = new Configuration(new File(preInitEvent.getModConfigurationDirectory(), "bbm/Fluid_Module/core.cfg"));
         config.load();
 
         bucketConfig = new Configuration(new File(config.getConfigFile().getParent(), "bucket_materials.cfg"));
         bucketConfig.load();
 
-        if (bucketConfig.hasKey(Configuration.CATEGORY_GENERAL, "metaValues"))
-        {
-            String[] values = bucketConfig.getStringList("metaValues", Configuration.CATEGORY_GENERAL, new String[]{""}, "");
-            if (values != null)
-            {
-                for (String s : values)
-                {
-                    if (s != null && s.contains(":"))
-                    {
-                        String[] split = s.split(":");
-                        try
-                        {
-                            int meta = Integer.parseInt(split[1]);
-                            BucketMaterialHandler.reserveMaterial(split[0], meta);
-                        }
-                        catch (NumberFormatException e)
-                        {
-                            throw new RuntimeException("Invalid data [" + s + "] in metaValue field in " + bucketConfig.getConfigFile());
-                        }
-                    }
-                    else
-                    {
-                        throw new RuntimeException("Invalid data [" + s + "] in metaValue field in " + bucketConfig.getConfigFile());
-                    }
-                }
-            }
-        }
+        //Load config, should always happen for any material is registered
+        BucketMaterialHandler.load(bucketConfig);
 
-        GENERATE_MILK_FLUID = config.getBoolean("EnableMilkFluidGeneration", Configuration.CATEGORY_GENERAL, GENERATE_MILK_FLUID, "Will generate a fluid for milk allowing for the bucket to be used for gathering milk from cows");
+        //Default bucket, mainly for testing as its not craftable
+        materialIron = new BucketMaterial(DOMAIN + ":ironBucket", new ResourceLocation(DOMAIN, "items/bucket"));
+        BucketMaterialHandler.addMaterial("iron", materialIron, 30000);
+
+        //Handle default supported fluids
+        Fluids.load(config);
+        fluid_milk = Fluids.MILK.fluid;
+
+        //Fire registry events to allow mods to load content for this mod
+        MinecraftForge.EVENT_BUS.post(new FluidRegistryEvent.Pre());
+        MinecraftForge.EVENT_BUS.post(new FluidRegistryEvent.Post());
+        MinecraftForge.EVENT_BUS.post(new BucketMaterialRegistryEvent.Pre());
+        MinecraftForge.EVENT_BUS.post(new BucketMaterialRegistryEvent.Post());
+
+        //Register Item
+        registerItems();
+        registerBlocks();
+
         proxy.preInit();
+    }
+
+    public void registerItems()
+    {
+        this.bucket = new ItemFluidBucket(DOMAIN + ":bucket");
+        GameRegistry.registerItem(bucket, "veBucket", DOMAIN);
+        MinecraftForge.EVENT_BUS.register(bucket);
+    }
+
+    public void registerBlocks()
+    {
+        for (Fluid fluid : FluidHelper.generatedFluids)
+        {
+            FluidHelper.createBlockForFluidIfMissing(fluid);
+        }
     }
 
     @Mod.EventHandler
     public void init(FMLInitializationEvent event)
     {
-        if (loadBucket)
-        {
-            this.bucket = new ItemFluidBucket(DOMAIN + ":bucket");
-            GameRegistry.registerItem(bucket, "veBucket", DOMAIN);
-            MinecraftForge.EVENT_BUS.register(bucket);
-        }
-
-        if (Loader.isModLoaded("AgriCraft"))
-        {
-            BucketHandler.addBucketHandler(com.InfinityRaider.AgriCraft.init.Blocks.blockWaterPad, new AgricraftWaterPad());
-            BucketHandler.addBucketHandler(com.InfinityRaider.AgriCraft.init.Blocks.blockWaterPadFull, new AgricraftWaterPadFilled());
-        }
         proxy.init();
     }
 
     @Mod.EventHandler
     public void postInit(FMLPostInitializationEvent event)
     {
-        //Load milk fluid and block
-        if ((GENERATE_MILK_FLUID || requestedFluids.contains("milk")))
-        {
-            fluid_milk = createOrGetFluid("milk", "milk");
-        }
-
-        logger.info("Generating fluids");
-        for (int i = 0; i < supportedFluidsForGeneration.length; i++)
-        {
-            String fluidID = supportedFluidsForGeneration[i];
-            if (requestedFluids.contains(fluidID)) //TODO add override config
-            {
-                Fluid fluid = createOrGetFluid(fluidID, "fluid");
-                if (fluid != null)
-                {
-                    if (fluid instanceof FluidVE)
-                    {
-                        ((FluidVE) fluid).setColor(fluidColors[i]);
-                    }
-                    logger.info("\tGenerated: " + fluidID + " --> " + fluid);
-                }
-            }
-        }
-        logger.info("Done... if your fluid was not generated then it was not supported. \n Supported fluids: " + supportedFluidsForGeneration);
-
         //Load per material configs
         for (BucketMaterial material : BucketMaterialHandler.getMaterials())
         {
@@ -236,76 +189,17 @@ public final class FluidModule
         config.save();
     }
 
-    /**
-     * Used to quickly create a new fluid with block
-     *
-     * @param name
-     * @return
-     */
-    public static Fluid createOrGetFluid(String name, String icon)
-    {
-        Fluid fluid;
-        if (FluidRegistry.getFluid(name) == null)
-        {
-            fluid = new FluidVE(name);
-            if (!FluidRegistry.registerFluid(fluid))
-            {
-                //Should never happen
-                throw new RuntimeException("Failed to register fluid[" + name + "] even though one is not registered");
-            }
-        }
-        else
-        {
-            fluid = FluidRegistry.getFluid(name);
-        }
-        if (fluid.getBlock() == null) //TODO add config to disable block
-        {
-            Block block = new BlockSimpleFluid(fluid, name, icon);
-            String blockName = "veBlock" + name.substring(0, 1).toUpperCase() + name.substring(1, name.length());
-            GameRegistry.registerBlock(block, blockName);
-        }
-        return fluid;
-    }
-
-    @Mod.EventHandler
-    public void receiveMessage(FMLInterModComms.IMCEvent event)
-    {
-        if (event.getMessages() != null)
-        {
-            for (FMLInterModComms.IMCMessage message : event.getMessages())
-            {
-                if ("requestFluid".equalsIgnoreCase(message.key))
-                {
-                    String fluid = message.getStringValue();
-                    if (fluid != null && !fluid.trim().isEmpty())
-                    {
-                        requestedFluids.add(fluid.trim().toLowerCase());
-                    }
-                }
-                //TODO add bucket materials
-            }
-        }
-    }
-
     @Mod.EventHandler
     public void loadCompleted(FMLLoadCompleteEvent event)
     {
-        //Get prop
-        Property prop = bucketConfig.get(Configuration.CATEGORY_GENERAL, "metaValues", new String[]{""});
-        prop.comment = "List of materials to meta values for containers. Do not change any of these values unless you know what you are doing. Changing these values will affect the world save and could result in unexpected behavior.";
-
-        //Create list
-        String[] list = new String[BucketMaterialHandler.getMaterials().size()];
-        int i = 0;
-        for (BucketMaterial material : BucketMaterialHandler.getMaterials())
-        {
-            list[i] = material.materialName + ":" + material.metaValue;
-            i++;
-        }
-        //Set list
-        prop.set(list);
-
         //Save config
+        BucketMaterialHandler.save(bucketConfig);
         bucketConfig.save();
+    }
+
+    @Deprecated
+    public static void doLoadBucket()
+    {
+
     }
 }

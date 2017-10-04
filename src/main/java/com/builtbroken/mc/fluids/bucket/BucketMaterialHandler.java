@@ -1,6 +1,10 @@
 package com.builtbroken.mc.fluids.bucket;
 
 import com.builtbroken.mc.fluids.FluidModule;
+import com.builtbroken.mc.fluids.api.reg.BucketMaterialRegistryEvent;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.common.config.Property;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -48,6 +52,7 @@ public class BucketMaterialHandler
      */
     public static void addMaterial(String name, BucketMaterial material, int requestedMeta)
     {
+        boolean registered = false;
         //Set material name
         material.materialName = name;
 
@@ -66,11 +71,13 @@ public class BucketMaterialHandler
             metaToName.put(requestedMeta, name);
             nameToMeta.put(name, requestedMeta);
             material.metaValue = requestedMeta;
+            registered = true;
         }
         //If the nameToMeta contains a value, use said value
         else if (nameToMeta.containsKey(name))
         {
             material.metaValue = nameToMeta.get(name);
+            registered = true;
         }
         //Try to locate an empty slot
         else
@@ -83,6 +90,7 @@ public class BucketMaterialHandler
                 {
                     reserveMaterial(name, nextID);
                     material.metaValue = nextID;
+                    registered = true;
                     break;
                 }
             }
@@ -92,6 +100,11 @@ public class BucketMaterialHandler
             {
                 throw new RuntimeException("More than 32000 bucket materials have been registered. Report this to the author so more bucket items can be add to expand the max size. In all honesty this should never happen unless a mod is overloading the register.");
             }
+        }
+
+        if (registered)
+        {
+            MinecraftForge.EVENT_BUS.post(new BucketMaterialRegistryEvent.Reg(material));
         }
     }
 
@@ -136,5 +149,66 @@ public class BucketMaterialHandler
     public static Collection<BucketMaterial> getMaterials()
     {
         return nameToMaterial.values();
+    }
+
+
+    /**
+     * Called to load bucket material IDs from config
+     *
+     * @param bucketConfig
+     */
+    public static void load(Configuration bucketConfig)
+    {
+        //TODO add event for changing mappings
+        if (bucketConfig.hasKey(Configuration.CATEGORY_GENERAL, "metaValues"))
+        {
+            String[] values = bucketConfig.getStringList("metaValues", Configuration.CATEGORY_GENERAL, new String[]{""}, "");
+            if (values != null)
+            {
+                for (String s : values)
+                {
+                    if (s != null && s.contains(":"))
+                    {
+                        String[] split = s.split(":");
+                        try
+                        {
+                            int meta = Integer.parseInt(split[1]);
+                            BucketMaterialHandler.reserveMaterial(split[0], meta);
+                        }
+                        catch (NumberFormatException e)
+                        {
+                            throw new RuntimeException("Invalid data [" + s + "] in metaValue field in " + bucketConfig.getConfigFile());
+                        }
+                    }
+                    else
+                    {
+                        throw new RuntimeException("Invalid data [" + s + "] in metaValue field in " + bucketConfig.getConfigFile());
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Called to save bucket material ids to config
+     *
+     * @param bucketConfig
+     */
+    public static void save(Configuration bucketConfig)
+    {
+        //Get prop
+        Property prop = bucketConfig.get(Configuration.CATEGORY_GENERAL, "metaValues", new String[]{""});
+        prop.comment = "List of materials to meta values for containers. Do not change any of these values unless you know what you are doing. Changing these values will affect the world save and could result in unexpected behavior.";
+
+        //Create list
+        String[] list = new String[BucketMaterialHandler.getMaterials().size()];
+        int i = 0;
+        for (BucketMaterial material : BucketMaterialHandler.getMaterials())
+        {
+            list[i] = material.materialName + ":" + material.metaValue;
+            i++;
+        }
+        //Set list
+        prop.set(list);
     }
 }

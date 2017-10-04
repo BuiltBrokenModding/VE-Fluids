@@ -831,7 +831,7 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
             BucketMaterial material = BucketMaterialHandler.getMaterial(stack.getItemDamage());
             if (material != null)
             {
-                IIcon icon = material.getIcon(stack);
+                IIcon icon = material.getBucketIcon(stack);
                 if (icon != null)
                 {
                     return icon;

@@ -1,7 +1,7 @@
 package com.builtbroken.mc.fluids.mods.pam;
 
-import com.builtbroken.mc.fluids.FluidModule;
 import com.builtbroken.mc.fluids.bucket.ItemFluidBucket;
+import com.builtbroken.mc.fluids.fluid.Fluids;
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.ShapedRecipes;
@@ -29,7 +29,7 @@ public class PamMilkBucketRecipe extends ShapedRecipes
             {
                 ItemFluidBucket item = (ItemFluidBucket) grid.getStackInSlot(4).getItem();
                 FluidStack fluidStack = item.getFluid(stack);
-                return fluidStack != null && fluidStack.getFluid() == FluidModule.fluid_milk;
+                return fluidStack != null && fluidStack.getFluid() == Fluids.MILK.fluid;
             }
         }
         return false;
