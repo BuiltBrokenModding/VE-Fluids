@@ -139,7 +139,19 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
         }
     }
 
-    @Override
+    @Override //Called first
+    public boolean onItemUseFirst(ItemStack stack, EntityPlayer player, World world, int x, int y, int z, int side, float hitX, float hitY, float hitZ)
+    {
+        return false; //return true will result in next 2 methods not getting called
+    }
+
+    @Override //Called second
+    public boolean onItemUse(ItemStack stack, EntityPlayer player, World world, int x, int y, int z, int side, float hitX, float hitY, float hitZ)
+    {
+        return false; //return true will result in next method not getting called
+    }
+
+    @Override //Called third
     public ItemStack onItemRightClick(ItemStack itemstack, World world, EntityPlayer player)
     {
         boolean isBucketEmpty = this.isEmpty(itemstack);
