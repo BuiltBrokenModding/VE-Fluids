@@ -838,9 +838,9 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
     @Override
     public IIcon getIcon(ItemStack stack, int pass)
     {
+        final BucketMaterial material = BucketMaterialHandler.getMaterial(stack.getItemDamage());
         if (pass == 0)
         {
-            BucketMaterial material = BucketMaterialHandler.getMaterial(stack.getItemDamage());
             if (material != null)
             {
                 IIcon icon = material.getBucketIcon(stack);
@@ -858,23 +858,42 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
             }
             else
             {
-                Fluid fluid = getFluid(stack).getFluid();
-                if (fluidToIconMap.containsKey(fluid.getName()))
+                final Fluid fluid = getFluid(stack).getFluid();
+                if (fluid != null) //shouldn't happen
                 {
-                    return fluidToIconMap.get(getFluid(stack).getFluid().getName());
+                    //Get icon from bucket first
+                    if (material != null)
+                    {
+                        IIcon icon = material.getFluidIcon(stack, fluid);
+                        if (icon != null)
+                        {
+                            return icon;
+                        }
+                    }
+
+                    //Use built in icons if material doesn't have one
+                    //Icon per material
+                    if (fluidToIconMap.containsKey(fluid.getName()))
+                    {
+                        return fluidToIconMap.get(getFluid(stack).getFluid().getName());
+                    }
+                    //grey scale icon
+                    else if (fluid.getColor() != 0xFFFFFF)
+                    {
+                        return fluidTextureWhite;
+                    }
+                    //Lava icon
+                    else if (getFluid(stack).getFluid().getTemperature() > 600)
+                    {
+                        return fluidTextureLava;
+                    }
+                    //Water icon
+                    else
+                    {
+                        return fluidTextureWater;
+                    }
                 }
-                else if (fluid.getColor() != 0xFFFFFF)
-                {
-                    return fluidTextureWhite;
-                }
-                else if (getFluid(stack).getFluid().getTemperature() > 600)
-                {
-                    return fluidTextureLava;
-                }
-                else
-                {
-                    return fluidTextureWater;
-                }
+                return blankTexture;
             }
         }
         return super.getIcon(stack, pass);

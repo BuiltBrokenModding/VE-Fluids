@@ -7,6 +7,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.IIcon;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.fluids.Fluid;
 
 /**
  * Handles customization for a material value
@@ -113,9 +114,9 @@ public class BucketMaterial
     }
 
     @SideOnly(Side.CLIENT)
-    public IIcon getFluidIcon(ItemStack stack)
+    public IIcon getFluidIcon(ItemStack stack, Fluid fluid)
     {
-        return bucketIcon;
+        return fluidIcon;
     }
 
     public ResourceLocation getBucketResourceLocation()
