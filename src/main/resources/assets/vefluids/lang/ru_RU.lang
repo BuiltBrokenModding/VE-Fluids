@@ -1,0 +1,16 @@
+## Russian translation by Xottab_DUTY
+## Items – предметы
+item.vefluids:bucket.name=Ведро
+item.vefluids:ironBucket.name=Железное ведро
+
+## Messages – сообщения
+item.vefluids:bucket.fluid.name=Жидкость
+item.vefluids:bucket.fluid.amount.name=Количество
+item.vefluids:bucket.error.fluid.milk.notRegistered=Похоже, что корове ведро не понравилось
+item.vefluids:bucket.volume.notEnoughForFullBlock=Нужно 1000мв жидкости, чтобы поставить полный блок
+item.vefluids:bucket.creative.void=Нескончаемые жидкости в режиме Творчества
+
+## Fluids – жидкости
+fluid.milk=Молоко
+fluid.fuel=Топливо
+fluid.oil=Нефть
