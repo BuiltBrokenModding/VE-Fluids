@@ -217,4 +217,14 @@ public class BucketMaterialHandler
         //Set list
         prop.set(list);
     }
+
+    /**
+     * Only for use in JUnit tests
+     */
+    public static void clear()
+    {
+        nameToMaterial.clear();
+        nameToMeta.clear();
+        metaToName.clear();
+    }
 }
