@@ -2,6 +2,7 @@ package com.builtbroken.mc.fluids.bucket;
 
 import com.builtbroken.mc.fluids.FluidModule;
 import com.builtbroken.mc.fluids.api.reg.BucketMaterialRegistryEvent;
+import net.minecraft.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
@@ -129,6 +130,11 @@ public class BucketMaterialHandler
     public static BucketMaterial getMaterial(String name)
     {
         return nameToMaterial.get(name);
+    }
+
+    public static BucketMaterial getMaterial(ItemStack stack)
+    {
+        return stack != null ? getMaterial(metaToName.get(stack.getItemDamage())) : null;
     }
 
     public static BucketMaterial getMaterial(int meta)

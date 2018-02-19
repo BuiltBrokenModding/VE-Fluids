@@ -448,6 +448,14 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
     {
         if (resource != null)
         {
+            BucketMaterial material = BucketMaterialHandler.getMaterial(container);
+
+            //Check that the material supports the fluid
+            if(material == null || !material.supportsFluid(container, resource))
+            {
+                return 0;
+            }
+
             if (!doFill)
             {
                 if (container.stackTagCompound == null || !container.stackTagCompound.hasKey("Fluid"))
