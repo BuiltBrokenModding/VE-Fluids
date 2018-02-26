@@ -282,66 +282,106 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
         }
     }
 
-    public ItemStack pickupFluid(EntityPlayer player, ItemStack itemstack, World world, int i, int j, int k)
+    /**
+     * Called to pick up the fluid
+     *
+     * @param player
+     * @param container
+     * @param world
+     * @param i
+     * @param j
+     * @param k
+     * @return
+     */
+    public ItemStack pickupFluid(EntityPlayer player, ItemStack container, World world, int i, int j, int k)
     {
-        Block block = world.getBlock(i, j, k);
-        int l = world.getBlockMetadata(i, j, k);
+        FluidStack fluidOfBlock = null;
 
+        final Block block = world.getBlock(i, j, k);
+        final int blockMeta = world.getBlockMetadata(i, j, k);
+
+        //Allow handler to override interaction
         if (BucketHandler.blockToHandler.containsKey(block))
         {
             BucketHandler handler = BucketHandler.blockToHandler.get(block);
             if (handler != null)
             {
-                return handler.emptyBucketClickBlock(player, itemstack, world, i, j, k, l);
+                return handler.emptyBucketClickBlock(player, container, world, i, j, k, blockMeta);
             }
         }
 
-        if (block == Blocks.water && l == 0)
+        if (block == Blocks.water && blockMeta == 0 || block == Blocks.lava && blockMeta == 0)
         {
-            if (world.setBlockToAir(i, j, k))
+            //Create fluid
+            if (block == Blocks.water)
             {
-                ItemStack bucket = new ItemStack(this, 1, itemstack.getItemDamage());
-                fill(bucket, new FluidStack(FluidRegistry.WATER, FluidContainerRegistry.BUCKET_VOLUME), true);
-                return this.consumeBucket(itemstack, player, bucket);
+                fluidOfBlock = new FluidStack(FluidRegistry.WATER, FluidContainerRegistry.BUCKET_VOLUME);
             }
-        }
-        else if (block == Blocks.lava && l == 0)
-        {
-            if (world.setBlockToAir(i, j, k))
+            else
             {
-                ItemStack bucket = new ItemStack(this, 1, itemstack.getItemDamage());
-                fill(bucket, new FluidStack(FluidRegistry.LAVA, FluidContainerRegistry.BUCKET_VOLUME), true);
-                return this.consumeBucket(itemstack, player, bucket);
+                fluidOfBlock = new FluidStack(FluidRegistry.LAVA, FluidContainerRegistry.BUCKET_VOLUME);
+            }
+
+            //Verify that we can pickup fluidOfBlock and that the block was removed
+            if (isValidFluidStack(container, fluidOfBlock) && world.setBlockToAir(i, j, k))
+            {
+                //Generate new bucket
+                ItemStack bucket = new ItemStack(this, 1, container.getItemDamage());
+
+                //Fill bucket
+                fill(bucket, fluidOfBlock, true);
+
+                //Return bucket
+                return this.consumeBucket(container, player, bucket);
             }
         }
         else if (block instanceof IFluidBlock && ((IFluidBlock) block).canDrain(world, i, j, k))
         {
-            int meta = world.getBlockMetadata(i, j, k);
-            FluidStack drainedFluid = ((IFluidBlock) block).drain(world, i, j, k, false);
+            //Get fluidOfBlock from block
+            fluidOfBlock = ((IFluidBlock) block).drain(world, i, j, k, false);
 
-            //TODO allow partial fills
-            if (isValidFluidStack(drainedFluid))
+            //Check that the fluidOfBlock is valid
+            if (isValidFluidStack(container, fluidOfBlock))
             {
-                ItemStack bucket = new ItemStack(this, 1, itemstack.getItemDamage());
-                drainedFluid = ((IFluidBlock) block).drain(world, i, j, k, true);
+                //Create new bucket
+                ItemStack bucket = new ItemStack(this, 1, container.getItemDamage());
 
-                if (isValidFluidStack(drainedFluid))
+                //Drain block and get fluidOfBlock
+                fluidOfBlock = ((IFluidBlock) block).drain(world, i, j, k, true);
+
+                //Check that fluidOfBlock is valid, aka sanity check
+                if (isValidFluidStack(container, fluidOfBlock))
                 {
-                    fill(bucket, drainedFluid, true);
-                    return this.consumeBucket(itemstack, player, bucket);
+                    //Fill bucket
+                    fill(bucket, fluidOfBlock, true);
+
+                    //Return bucket
+                    return this.consumeBucket(container, player, bucket);
                 }
+                //Reverse action as something went wrong
                 else if (world.getBlock(i, j, k) != block)
                 {
-                    world.setBlock(i, j, k, block, meta, 3);
+                    world.setBlock(i, j, k, block, blockMeta, 3);
                 }
             }
         }
-        return itemstack;
+
+        return container;
     }
 
-    private boolean isValidFluidStack(FluidStack drainedFluid)
+    /**
+     * Used to check if the fluid stack is valid for the container
+     *
+     * @param container  - bucket or container that will be filled
+     * @param fluidStack - stack being inserted into the bucket
+     * @return true if the stack is valid
+     */
+    public boolean isValidFluidStack(ItemStack container, FluidStack fluidStack)
     {
-        return drainedFluid != null && drainedFluid.getFluid() != null && drainedFluid.amount == FluidContainerRegistry.BUCKET_VOLUME;
+        return fluidStack != null
+                && fluidStack.getFluid() != null
+                && fluidStack.amount == FluidContainerRegistry.BUCKET_VOLUME
+                && fill(container, fluidStack, false) == fluidStack.amount;
     }
 
     /**
@@ -451,7 +491,7 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
             BucketMaterial material = BucketMaterialHandler.getMaterial(container);
 
             //Check that the material supports the fluid
-            if(material == null || !material.supportsFluid(container, resource))
+            if (material == null || !material.supportsFluid(container, resource))
             {
                 return 0;
             }
@@ -764,30 +804,63 @@ public class ItemFluidBucket extends Item implements IFluidContainerItem
     @Override
     public void getSubItems(Item item, CreativeTabs tab, List list)
     {
+        //Add empty buckets
         for (BucketMaterial material : BucketMaterialHandler.getMaterials())
         {
             list.add(new ItemStack(item, 1, material.metaValue));
         }
 
-        ItemStack waterBucket = new ItemStack(item);
-        fill(waterBucket, new FluidStack(FluidRegistry.WATER, FluidContainerRegistry.BUCKET_VOLUME), true);
-        list.add(waterBucket);
-
-        for (String string : supportedFluidTextures)
+        //Add water bucket, separated from loop due to using default texture
+        ItemStack waterBucket = getBucketForFluid(new FluidStack(FluidRegistry.WATER, FluidContainerRegistry.BUCKET_VOLUME));
+        if (waterBucket != null)
         {
-            if (FluidRegistry.getFluid(string) != null)
+            list.add(waterBucket);
+        }
+
+        //Loop over supported fluid textures TODO replace when render code is switched over to use fluid texture
+        for (String fluid_id : supportedFluidTextures)
+        {
+            //Check to make sure the fluid exists
+            if (FluidRegistry.getFluid(fluid_id) != null)
             {
-                ItemStack milkBucket = new ItemStack(item);
-                fill(milkBucket, new FluidStack(FluidRegistry.getFluid(string), FluidContainerRegistry.BUCKET_VOLUME), true);
-                list.add(milkBucket);
+                //Create fluid
+                FluidStack fluid = new FluidStack(FluidRegistry.getFluid(fluid_id), FluidContainerRegistry.BUCKET_VOLUME);
+
+                //Get bucket
+                ItemStack bucket = getBucketForFluid(fluid);
+
+                //If null we have no valid bucket for the fluid
+                if (bucket != null)
+                {
+                    list.add(bucket);
+                }
             }
         }
 
+        //Allow handlers to add buckets to tab
         for (BucketHandler handler : BucketHandler.bucketHandlers)
         {
             handler.getSubItems(item, list);
         }
     }
+
+    //Attempts to locate a bucket that supports the fluid, prevents empty buckets from showing in creative tab
+    private ItemStack getBucketForFluid(FluidStack stack)
+    {
+        for (BucketMaterial material : BucketMaterialHandler.getMaterials())
+        {
+            ItemStack bucket = new ItemStack(this, 1, material.metaValue);
+
+            int fill = fill(bucket, stack, true);
+
+            if (fill > 0)
+            {
+                return bucket;
+            }
+        }
+        return null;
+    }
+
 
     @Override
     public ItemStack getContainerItem(ItemStack itemstack)
