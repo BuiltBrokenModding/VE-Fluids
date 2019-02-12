@@ -42,6 +42,7 @@ import java.util.Map;
  */
 public class ModelFluidBucket implements IModel
 {
+
     public static final ResourceLocation default_fluid_texture = new ResourceLocation(FluidModule.DOMAIN, "items/bucket.fluid2");
     public static final ResourceLocation default_bucket_texture = new ResourceLocation(FluidModule.DOMAIN, "items/bucket.missing");
 
@@ -51,26 +52,19 @@ public class ModelFluidBucket implements IModel
 
     public static final IModel MODEL = new ModelFluidBucket();
 
-    protected final ResourceLocation baseLocation;
-    protected final ResourceLocation liquidLocation;
+    protected final BucketMaterial material;
 
     protected final Fluid fluid;
 
-    protected final boolean invert;
-    protected final boolean disableGasFlip;
-
     public ModelFluidBucket()
     {
-        this(null, null, null, false, false);
+        this(null, null);
     }
 
-    public ModelFluidBucket(ResourceLocation baseLocation, ResourceLocation liquidLocation, Fluid fluid, boolean invert, boolean disableGasFlip)
+    public ModelFluidBucket(BucketMaterial material, Fluid fluid)
     {
-        this.baseLocation = baseLocation != null ? baseLocation : default_bucket_texture;
-        this.liquidLocation = liquidLocation != null ? liquidLocation : default_fluid_texture;
+        this.material = material;
         this.fluid = fluid;
-        this.invert = invert;
-        this.disableGasFlip = disableGasFlip;
     }
 
     @Override
@@ -124,6 +118,8 @@ public class ModelFluidBucket implements IModel
 
         // if the fluid is a gas wi manipulate the initial state to be rotated 180? to turn it upside down
         final boolean isGas = fluid != null && fluid.isGaseous();
+        final boolean disableGasFlip = material != null && material.disableGasFlip();
+        final boolean invert = material != null && material.shouldInvertBucketRender();
         if (isGas && !disableGasFlip && !invert || (!isGas || disableGasFlip) && invert)
         {
             state = new ModelStateComposition(state, TRSRTransformation.blockCenterToCorner(new TRSRTransformation(null, new Quat4f(0, 0, 1, 0), null, null)));
@@ -138,19 +134,29 @@ public class ModelFluidBucket implements IModel
             fluidSprite = bakedTextureGetter.apply(fluid.getStill());
         }
 
-        if (baseLocation != null)
+        //Get texture paths
+        ResourceLocation bucket_texture = default_bucket_texture;
+        ResourceLocation fluid_texture = default_fluid_texture;
+        if (material != null)
         {
-            // build base (insidest)
-            IBakedModel model = (new ItemLayerModel(ImmutableList.of(baseLocation))).bake(state, format, bakedTextureGetter);
-            builder.addAll(model.getQuads(null, null, 0));
+            if (material.getBucketResourceLocation() != null)
+            {
+                bucket_texture = material.getBucketResourceLocation();
+            }
+            if (material.getFluidResourceLocation() != null)
+            {
+                fluid_texture = material.getFluidResourceLocation();
+            }
         }
-        if (liquidLocation != null && fluidSprite != null)
-        {
-            TextureAtlasSprite liquid = bakedTextureGetter.apply(liquidLocation);
-            // build liquid layer (inside)
-            builder.addAll(ItemTextureQuadConverter.convertTexture(format, transform, liquid, fluidSprite, NORTH_Z_FLUID, EnumFacing.NORTH, fluid.getColor()));
-            builder.addAll(ItemTextureQuadConverter.convertTexture(format, transform, liquid, fluidSprite, SOUTH_Z_FLUID, EnumFacing.SOUTH, fluid.getColor())); //seems to be darker
-        }
+
+        // build base (insidest)
+        IBakedModel model = (new ItemLayerModel(ImmutableList.of(bucket_texture))).bake(state, format, bakedTextureGetter);
+        builder.addAll(model.getQuads(null, null, 0));
+
+        // build liquid layer (inside)
+        TextureAtlasSprite liquid = bakedTextureGetter.apply(fluid_texture);
+        builder.addAll(ItemTextureQuadConverter.convertTexture(format, transform, liquid, fluidSprite, NORTH_Z_FLUID, EnumFacing.NORTH, fluid.getColor()));
+        builder.addAll(ItemTextureQuadConverter.convertTexture(format, transform, liquid, fluidSprite, SOUTH_Z_FLUID, EnumFacing.SOUTH, fluid.getColor())); //seems to be darker
 
         return new BakedFluidBucket(this, builder.build(), fluidSprite, format, Maps.immutableEnumMap(transformMap), Maps.newHashMap());
     }
@@ -195,22 +201,13 @@ public class ModelFluidBucket implements IModel
             material = FluidModule.materialIron;
         }
 
-        boolean invert = false;
-        if(customData.containsKey("invert")) {
-            invert = Boolean.parseBoolean(customData.get("invert"));
-        }
-
-        boolean disableGasFlip = false;
-        if(customData.containsKey("disableGasFlip")) {
-            invert = Boolean.parseBoolean(customData.get("disableGasFlip"));
-        }
-
         // create new model with correct liquid
-        return new ModelFluidBucket(material.getBucketResourceLocation(), material.getFluidResourceLocation(), fluid, invert, disableGasFlip);
+        return new ModelFluidBucket(material, fluid);
     }
 
     private static final class BakedDynBucketOverrideHandler extends ItemOverrideList
     {
+
         public static final BakedDynBucketOverrideHandler INSTANCE = new BakedDynBucketOverrideHandler();
 
         private BakedDynBucketOverrideHandler()
@@ -225,8 +222,6 @@ public class ModelFluidBucket implements IModel
 
             String material = "iron";
             String fluidName = "";
-            String invert = "false";
-            String disableGasFlip = "false";
 
             if (stack.getItem() instanceof ItemFluidBucket)
             {
@@ -245,8 +240,6 @@ public class ModelFluidBucket implements IModel
                 if (bucketMaterial != null)
                 {
                     material = bucketMaterial.materialName;
-                    invert = bucketMaterial.shouldInvertBucketRender() ? "true" : "false";
-                    disableGasFlip = bucketMaterial.disableGasFlip() ? "true" : "false";
                 }
             }
 
@@ -256,7 +249,7 @@ public class ModelFluidBucket implements IModel
             //Populate cached value if it doesn't exist
             if (!model.cache.containsKey(key))
             {
-                IModel parent = model.parent.process(ImmutableMap.of("fluid", fluidName, "material", material, "invert", invert, "disableGasFlip", disableGasFlip)); //TODO move keys to static final
+                IModel parent = model.parent.process(ImmutableMap.of("fluid", fluidName, "material", material)); //TODO move keys to static final
                 Function<ResourceLocation, TextureAtlasSprite> textureGetter;
                 textureGetter = new Function<ResourceLocation, TextureAtlasSprite>()
                 {
@@ -314,13 +307,28 @@ public class ModelFluidBucket implements IModel
         @Override
         public List<BakedQuad> getQuads(@Nullable IBlockState state, @Nullable EnumFacing side, long rand)
         {
-            if(side == null) return quads;
+            if (side == null) return quads;
             return ImmutableList.of();
         }
 
-        public boolean isAmbientOcclusion() { return true;  }
-        public boolean isGui3d() { return false; }
-        public boolean isBuiltInRenderer() { return false; }
-        public TextureAtlasSprite getParticleTexture() { return particle; }
+        public boolean isAmbientOcclusion()
+        {
+            return true;
+        }
+
+        public boolean isGui3d()
+        {
+            return false;
+        }
+
+        public boolean isBuiltInRenderer()
+        {
+            return false;
+        }
+
+        public TextureAtlasSprite getParticleTexture()
+        {
+            return particle;
+        }
     }
 }
