@@ -56,16 +56,21 @@ public class ModelFluidBucket implements IModel
 
     protected final Fluid fluid;
 
+    protected final boolean invert;
+    protected final boolean disableGasFlip;
+
     public ModelFluidBucket()
     {
-        this(null, null, null);
+        this(null, null, null, false, false);
     }
 
-    public ModelFluidBucket(ResourceLocation baseLocation, ResourceLocation liquidLocation, Fluid fluid)
+    public ModelFluidBucket(ResourceLocation baseLocation, ResourceLocation liquidLocation, Fluid fluid, boolean invert, boolean disableGasFlip)
     {
         this.baseLocation = baseLocation != null ? baseLocation : default_bucket_texture;
         this.liquidLocation = liquidLocation != null ? liquidLocation : default_fluid_texture;
         this.fluid = fluid;
+        this.invert = invert;
+        this.disableGasFlip = disableGasFlip;
     }
 
     @Override
@@ -118,7 +123,8 @@ public class ModelFluidBucket implements IModel
         }
 
         // if the fluid is a gas wi manipulate the initial state to be rotated 180? to turn it upside down
-        if (fluid != null && fluid.isGaseous())
+        final boolean isGas = fluid != null && fluid.isGaseous();
+        if (isGas && !disableGasFlip && !invert || (!isGas || disableGasFlip) && invert)
         {
             state = new ModelStateComposition(state, TRSRTransformation.blockCenterToCorner(new TRSRTransformation(null, new Quat4f(0, 0, 1, 0), null, null)));
         }
@@ -189,8 +195,18 @@ public class ModelFluidBucket implements IModel
             material = FluidModule.materialIron;
         }
 
+        boolean invert = false;
+        if(customData.containsKey("invert")) {
+            invert = Boolean.parseBoolean(customData.get("invert"));
+        }
+
+        boolean disableGasFlip = false;
+        if(customData.containsKey("disableGasFlip")) {
+            invert = Boolean.parseBoolean(customData.get("disableGasFlip"));
+        }
+
         // create new model with correct liquid
-        return new ModelFluidBucket(material.getBucketResourceLocation(), material.getFluidResourceLocation(), fluid);
+        return new ModelFluidBucket(material.getBucketResourceLocation(), material.getFluidResourceLocation(), fluid, invert, disableGasFlip);
     }
 
     private static final class BakedDynBucketOverrideHandler extends ItemOverrideList
@@ -209,6 +225,8 @@ public class ModelFluidBucket implements IModel
 
             String material = "iron";
             String fluidName = "";
+            String invert = "false";
+            String disableGasFlip = "false";
 
             if (stack.getItem() instanceof ItemFluidBucket)
             {
@@ -223,12 +241,12 @@ public class ModelFluidBucket implements IModel
                 }
 
                 //Get material name for key
-
-
                 BucketMaterial bucketMaterial = BucketMaterialHandler.getMaterial(stack.getItemDamage());
                 if (bucketMaterial != null)
                 {
                     material = bucketMaterial.materialName;
+                    invert = bucketMaterial.shouldInvertBucketRender() ? "true" : "false";
+                    disableGasFlip = bucketMaterial.disableGasFlip() ? "true" : "false";
                 }
             }
 
@@ -238,7 +256,7 @@ public class ModelFluidBucket implements IModel
             //Populate cached value if it doesn't exist
             if (!model.cache.containsKey(key))
             {
-                IModel parent = model.parent.process(ImmutableMap.of("fluid", fluidName, "material", material));
+                IModel parent = model.parent.process(ImmutableMap.of("fluid", fluidName, "material", material, "invert", invert, "disableGasFlip", disableGasFlip)); //TODO move keys to static final
                 Function<ResourceLocation, TextureAtlasSprite> textureGetter;
                 textureGetter = new Function<ResourceLocation, TextureAtlasSprite>()
                 {

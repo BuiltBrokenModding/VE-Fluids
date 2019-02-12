@@ -51,6 +51,8 @@ public class BucketMaterial
 
     protected ResourceLocation bucketResourceLocation;
     protected ResourceLocation fluidResourceLocation;
+    protected boolean invertBucketRender = false;
+    protected boolean disableGasRenderFlip = false;
 
     public BucketMaterial(String localization, ResourceLocation bucketResourceLocation)
     {
@@ -119,6 +121,36 @@ public class BucketMaterial
     public ResourceLocation getFluidResourceLocation()
     {
         return fluidResourceLocation;
+    }
+
+    /**
+     * Should the bucket render upside down by default.
+     * <p>
+     * Gases are handled automatically this is for the actual
+     * default render. Gases will render in the opposite direction
+     * unless disabled.
+     *
+     * @return true to flip upside down by default
+     */
+    public boolean shouldInvertBucketRender()
+    {
+        return invertBucketRender;
+    }
+
+    /**
+     * Should we disable the gas render flip
+     * <p>
+     * Use this if your container does not need to
+     * change based on if the fluid is a gas or not.
+     * By default most mods fluid there container if
+     * it is not sealed to help fit the Minecraft
+     * lore.
+     *
+     * @return true to disable
+     */
+    public boolean disableGasFlip()
+    {
+        return disableGasRenderFlip;
     }
 
     /**
