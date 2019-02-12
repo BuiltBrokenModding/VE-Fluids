@@ -62,9 +62,6 @@ public final class FluidModule
     /** Bucket material config */
     public static Configuration bucketConfig;
 
-    @SidedProxy(clientSide = "com.builtbroken.mc.fluids.client.ClientProxy", serverSide = "com.builtbroken.mc.fluids.CommonProxy")
-    public static CommonProxy proxy;
-
     /** Test material that mimics the vanilla bucket */
     public static BucketMaterial materialIron;
 
@@ -97,8 +94,6 @@ public final class FluidModule
 
         //Handle default supported fluids
         Fluids.load(config);
-
-        proxy.preInit();
 
         //Used to compare rendering
         if (runningAsDev)
@@ -136,12 +131,6 @@ public final class FluidModule
     }
 
     @Mod.EventHandler
-    public void init(FMLInitializationEvent event)
-    {
-        proxy.init();
-    }
-
-    @Mod.EventHandler
     public void postInit(FMLPostInitializationEvent event)
     {
         //Load per material configs
@@ -155,7 +144,6 @@ public final class FluidModule
             handler.loadSettings(config);
         }
 
-        proxy.postInit();
         config.save();
     }
 
