@@ -17,6 +17,7 @@ import java.util.List;
  */
 public class BucketMaterial
 {
+
     //Settings
     public boolean preventHotFluidUsage = true;
     public boolean damageBucketWithHotFluid = true;
@@ -34,13 +35,19 @@ public class BucketMaterial
 
     private BucketHandler handler;
 
-    /** Localization to translate, prefixed with 'item.' */
+    /**
+     * Localization to translate, prefixed with 'item.'
+     */
     public String localization;
 
-    /** Name of the material, set on register */
+    /**
+     * Name of the material, set on register
+     */
     public String materialName;
-    /** Item meta value this material is registered to */
-    public int metaValue;
+    /**
+     * Item meta value this material is registered to
+     */
+    public int metaValue = -1;
 
     protected ResourceLocation bucketResourceLocation;
     protected ResourceLocation fluidResourceLocation;
@@ -125,7 +132,9 @@ public class BucketMaterial
         return entityInteractionAllowList ? entityInteractionList.contains(entry.getName()) : !entityInteractionList.contains(entry.getName());
     }
 
-    /** Handler for this material, gets called first before any external handler */
+    /**
+     * Handler for this material, gets called first before any external handler
+     */
     public BucketHandler getHandler()
     {
         return handler;
@@ -135,5 +144,11 @@ public class BucketMaterial
     {
         this.handler = handler;
         BucketHandler.addBucketHandler(handler);
+    }
+
+    @Override
+    public String toString()
+    {
+        return "BucketMaterial[" + materialName + "]@" + metaValue;
     }
 }
