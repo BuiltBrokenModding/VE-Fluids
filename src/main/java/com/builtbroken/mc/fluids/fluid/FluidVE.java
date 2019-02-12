@@ -16,9 +16,10 @@ public class FluidVE extends Fluid
         super(fluidName, new ResourceLocation(modID, "blocks/" + icon + "_still"), new ResourceLocation(modID, "blocks/" + icon + "_flow"));
     }
 
-    public void setColor(int color)
+    public FluidVE setColor(int color)
     {
         this.color = color;
+        return this;
     }
 
     @Override

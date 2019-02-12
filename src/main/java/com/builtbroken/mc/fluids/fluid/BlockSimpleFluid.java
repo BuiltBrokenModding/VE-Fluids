@@ -13,6 +13,6 @@ public class BlockSimpleFluid extends BlockFluidClassic
     public BlockSimpleFluid(Fluid fluid, String blockName)
     {
         super(fluid, Material.WATER);
-        setUnlocalizedName(FluidModule.DOMAIN + ":" + blockName);
+        setTranslationKey(FluidModule.DOMAIN + ":" + blockName);
     }
 }

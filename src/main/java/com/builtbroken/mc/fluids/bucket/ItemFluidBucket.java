@@ -55,7 +55,7 @@ public class ItemFluidBucket extends Item
     {
         this.maxStackSize = 1;
         this.setRegistryName(new ResourceLocation(FluidModule.DOMAIN, "veBucket"));
-        this.setUnlocalizedName(name);
+        this.setTranslationKey(name);
         this.setCreativeTab(CreativeTabs.MISC);
         this.setHasSubtypes(true);
         MinecraftForge.EVENT_BUS.register(this);
@@ -73,12 +73,12 @@ public class ItemFluidBucket extends Item
     {
         if (!isEmpty(stack))
         {
-            list.add(I18n.format(getUnlocalizedName() + ".fluid.name") + ": " + getFluid(stack).getLocalizedName());
-            list.add(I18n.format(getUnlocalizedName() + ".fluid.amount.name") + ": " + getFluid(stack).amount + "mb");
+            list.add(I18n.format(getTranslationKey() + ".fluid.name") + ": " + getFluid(stack).getLocalizedName());
+            list.add(I18n.format(getTranslationKey() + ".fluid.amount.name") + ": " + getFluid(stack).amount + "mb");
         }
         else if (Minecraft.getMinecraft() != null && Minecraft.getMinecraft().player != null && Minecraft.getMinecraft().player.capabilities.isCreativeMode)
         {
-            list.add("\u00a7c" + I18n.format(getUnlocalizedName() + ".creative.void"));
+            list.add("\u00a7c" + I18n.format(getTranslationKey() + ".creative.void"));
         }
     }
 
@@ -349,7 +349,7 @@ public class ItemFluidBucket extends Item
         }
         else if (!world.isRemote)
         {
-            player.sendMessage(new TextComponentTranslation(getUnlocalizedName() + ".volume.notEnoughForFullBlock"));
+            player.sendMessage(new TextComponentTranslation(getTranslationKey() + ".volume.notEnoughForFullBlock"));
         }
         return itemstack;
     }
@@ -491,7 +491,7 @@ public class ItemFluidBucket extends Item
             {
                 container.getTagCompound().removeTag("Fluid");
 
-                if (container.getTagCompound().hasNoTags())
+                if (container.getTagCompound().isEmpty())
                 {
                     container.setTagCompound(null);
                 }
@@ -738,7 +738,7 @@ public class ItemFluidBucket extends Item
                     else
                     {
                         ((EntityCow) entity).playLivingSound();
-                        player.sendMessage(new TextComponentTranslation(getUnlocalizedName() + ".error.fluid.milk.notRegistered"));
+                        player.sendMessage(new TextComponentTranslation(getTranslationKey() + ".error.fluid.milk.notRegistered"));
                     }
                     return true;
                 }
@@ -823,13 +823,13 @@ public class ItemFluidBucket extends Item
     }
 
     @Override
-    public String getUnlocalizedName(ItemStack stack)
+    public String getTranslationKey(ItemStack stack)
     {
         BucketMaterial material = BucketMaterialHandler.getMaterial(stack.getItemDamage());
         if (material != null)
         {
             return material.getUnlocalizedName(stack);
         }
-        return super.getUnlocalizedName();
+        return super.getTranslationKey();
     }
 }

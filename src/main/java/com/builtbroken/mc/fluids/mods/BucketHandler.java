@@ -55,7 +55,7 @@ public class BucketHandler
         addBucketHandler(handler);
         if (blockToHandler.containsKey(block) && blockToHandler.get(block) != null)
         {
-            FluidModule.logger.error("Overriding handler '" + blockToHandler.get(block) + "' for block '" + block.getUnlocalizedName() + "' with " + handler);
+            FluidModule.logger.error("Overriding handler '" + blockToHandler.get(block) + "' for block '" + block.getTranslationKey() + "' with " + handler);
         }
         blockToHandler.put(block, handler);
     }
