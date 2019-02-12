@@ -50,6 +50,10 @@ public class ModelFluidBucket implements IModel
     private static final float NORTH_Z_FLUID = 7.498f / 16f;
     private static final float SOUTH_Z_FLUID = 8.502f / 16f;
 
+    //Custom data keys
+    private static final String DK_FLUID = "fluid";
+    private static final String DK_MATERIAL = "material";
+
     public static final IModel MODEL = new ModelFluidBucket();
 
     protected final BucketMaterial material;
@@ -186,7 +190,7 @@ public class ModelFluidBucket implements IModel
     @Override
     public IModel process(ImmutableMap<String, String> customData)
     {
-        String fluidName = customData.get("fluid");
+        String fluidName = customData.get(DK_FLUID);
         Fluid fluid = FluidRegistry.getFluid(fluidName);
 
         if (fluid == null)
@@ -194,7 +198,7 @@ public class ModelFluidBucket implements IModel
             fluid = this.fluid;
         }
 
-        String materialName = customData.get("material");
+        String materialName = customData.get(DK_MATERIAL);
         BucketMaterial material = BucketMaterialHandler.getMaterial(materialName);
         if (material == null)
         {
@@ -249,7 +253,7 @@ public class ModelFluidBucket implements IModel
             //Populate cached value if it doesn't exist
             if (!model.cache.containsKey(key))
             {
-                IModel parent = model.parent.process(ImmutableMap.of("fluid", fluidName, "material", material)); //TODO move keys to static final
+                IModel parent = model.parent.process(ImmutableMap.of(DK_FLUID, fluidName, DK_MATERIAL, material));
                 Function<ResourceLocation, TextureAtlasSprite> textureGetter;
                 textureGetter = new Function<ResourceLocation, TextureAtlasSprite>()
                 {
