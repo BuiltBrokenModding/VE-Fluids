@@ -4,6 +4,7 @@ import com.builtbroken.mc.fluids.api.reg.BucketMaterialRegistryEvent;
 import com.builtbroken.mc.fluids.api.reg.FluidRegistryEvent;
 import com.builtbroken.mc.fluids.bucket.BucketMaterial;
 import com.builtbroken.mc.fluids.bucket.BucketMaterialHandler;
+import com.builtbroken.mc.fluids.bucket.BucketMaterialMimic;
 import com.builtbroken.mc.fluids.bucket.ItemFluidBucket;
 import com.builtbroken.mc.fluids.fluid.FluidHelper;
 import com.builtbroken.mc.fluids.fluid.Fluids;
@@ -11,6 +12,7 @@ import com.builtbroken.mc.fluids.mods.BucketHandler;
 import com.builtbroken.mc.fluids.mods.aa.SlimeRiceBucketRecipe;
 import com.builtbroken.mc.fluids.mods.pam.PamBucketRecipe;
 import net.minecraft.block.Block;
+import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
@@ -44,6 +46,7 @@ import java.io.File;
 @Mod.EventBusSubscriber(modid = FluidModule.DOMAIN)
 public final class FluidModule
 {
+
     public static final String DOMAIN = "vefluids";
 
     public static final String MAJOR_VERSION = "@MAJOR@";
@@ -52,20 +55,32 @@ public final class FluidModule
     public static final String BUILD_VERSION = "@BUILD@";
     public static final String VERSION = MAJOR_VERSION + "." + MINOR_VERSION + "." + REVISION_VERSION + "." + BUILD_VERSION;
 
-    /** VM argument to trigger running of debug only options */
+    /**
+     * VM argument to trigger running of debug only options
+     */
     public static final boolean runningAsDev = System.getProperty("development") != null && System.getProperty("development").equalsIgnoreCase("true");
 
-    /** Information output thing */
+    /**
+     * Information output thing
+     */
     public static final Logger logger = LogManager.getLogger("SBM-NoMoreRain");
-    /** Main config */
+    /**
+     * Main config
+     */
     public static Configuration config;
-    /** Bucket material config */
+    /**
+     * Bucket material config
+     */
     public static Configuration bucketConfig;
 
-    /** Test material that mimics the vanilla bucket */
+    /**
+     * Test material that mimics the vanilla bucket
+     */
     public static BucketMaterial materialIron;
 
-    /** Bucket item */
+    /**
+     * Bucket item
+     */
     public static ItemFluidBucket bucket;
 
     public FluidModule()
@@ -91,6 +106,13 @@ public final class FluidModule
         //Default bucket, mainly for testing as its not craftable
         materialIron = new BucketMaterial(DOMAIN + ":ironBucket", new ResourceLocation(DOMAIN, "items/bucket"));
         BucketMaterialHandler.addMaterial("iron", materialIron, 30000);
+
+        if (runningAsDev)
+        {
+            BucketMaterialHandler.addMaterial("test_itemstack_usage",
+                    new BucketMaterialMimic(DOMAIN + ":ironBucket", new ItemStack(Items.LEATHER_HELMET)),
+                    30001);
+        }
 
         //Handle default supported fluids
         Fluids.load(config);
@@ -139,7 +161,7 @@ public final class FluidModule
             material.handleConfig(bucketConfig);
         }
 
-        for(BucketHandler handler : BucketHandler.bucketHandlers)
+        for (BucketHandler handler : BucketHandler.bucketHandlers)
         {
             handler.loadSettings(config);
         }

@@ -1,6 +1,7 @@
 package com.builtbroken.mc.fluids.client;
 
 import com.builtbroken.mc.fluids.FluidModule;
+import com.builtbroken.mc.fluids.api.material.IBucketMaterialMimic;
 import com.builtbroken.mc.fluids.bucket.BucketMaterial;
 import com.builtbroken.mc.fluids.bucket.BucketMaterialHandler;
 import com.builtbroken.mc.fluids.bucket.ItemFluidBucket;
@@ -153,9 +154,24 @@ public class ModelFluidBucket implements IModel
             }
         }
 
-        // build base (insidest)
-        IBakedModel model = (new ItemLayerModel(ImmutableList.of(bucket_texture))).bake(state, format, bakedTextureGetter);
-        builder.addAll(model.getQuads(null, null, 0));
+        // build base (inside)
+        if (material instanceof IBucketMaterialMimic)
+        {
+            final ItemStack bucketMimic = ((IBucketMaterialMimic) material).getItemToMimic(null); //TODO get bucket stack
+            if (bucketMimic != null && !bucketMimic.isEmpty())
+            {
+                final IBakedModel model = Minecraft.getMinecraft().getRenderItem().getItemModelMesher().getItemModel(bucketMimic);
+                if (model != null)
+                {
+                    builder.addAll(QuadTransformer.processMany(model.getQuads(null, null, 0), transform.getMatrix()));
+                }
+            }
+        }
+        else
+        {
+            IBakedModel model = (new ItemLayerModel(ImmutableList.of(bucket_texture))).bake(state, format, bakedTextureGetter);
+            builder.addAll(model.getQuads(null, null, 0));
+        }
 
         // build liquid layer (inside)
         TextureAtlasSprite liquid = bakedTextureGetter.apply(fluid_texture);
