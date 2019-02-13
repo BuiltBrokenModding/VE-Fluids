@@ -66,7 +66,7 @@ public class BucketMaterial
      * @param stack - current bucket
      * @return - material to switch to
      */
-    public BucketMaterial getDamagedBucket(ItemStack stack)
+    public BucketMaterial getDamagedBucket(ItemStack stack) //TODO define damage cause
     {
         return null;
     }
@@ -76,7 +76,7 @@ public class BucketMaterial
      *
      * @param config
      */
-    public void handleConfig(Configuration config)
+    public void handleConfig(Configuration config) //TODO nest inside a settings class to clean up the code
     {
         preventHotFluidUsage = config.getBoolean("PreventHotFluidUsage", getConfigCategory(), preventHotFluidUsage, "Enables settings that attempt to prevent players from wanting to use the bucket for moving hot fluids");
         damageBucketWithHotFluid = config.getBoolean("DamageBucketWithHotFluid", getConfigCategory(), damageBucketWithHotFluid, "Will randomly destroy the bucket if it contains hot fluid, lava in other words");
@@ -113,11 +113,13 @@ public class BucketMaterial
         return "item." + localization;
     }
 
+    //TODO move to JSON and front end reg
     public ResourceLocation getBucketResourceLocation()
     {
         return bucketResourceLocation;
     }
 
+    //TODO move to JSON and front end reg
     public ResourceLocation getFluidResourceLocation()
     {
         return fluidResourceLocation;
