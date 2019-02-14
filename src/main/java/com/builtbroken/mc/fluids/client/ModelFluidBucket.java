@@ -45,7 +45,7 @@ public class ModelFluidBucket implements IModel
 {
 
     public static final ResourceLocation default_fluid_texture = new ResourceLocation(FluidModule.DOMAIN, "items/bucket.fluid2");
-    public static final ResourceLocation default_bucket_texture = new ResourceLocation(FluidModule.DOMAIN, "items/bucket.missing");
+    public static final ResourceLocation default_bucket_texture = new ResourceLocation(FluidModule.DOMAIN, "items/bucket");
 
     // minimal Z offset to prevent depth-fighting
     private static final float NORTH_Z_FLUID = 7.498f / 16f;

@@ -42,8 +42,11 @@ public class FluidClientReg
         //Register model loader
         ModelLoaderRegistry.registerLoader(new BucketModelLoader(FluidModule.DOMAIN));
 
-        //Register all the bucket types
+
         final Set<ModelResourceLocation> models = new HashSet();
+        models.add(DEFAULT_MODEL);
+
+        //Collect bucket models, fire events to allow override
         BucketMaterialRegistryEvent.Model modelEvent = new BucketMaterialRegistryEvent.Model(null, null);
         for (BucketMaterial material : BucketMaterialHandler.getMaterials())
         {
