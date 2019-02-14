@@ -19,7 +19,6 @@
 
 package com.builtbroken.mc.fluids.bucket;
 
-import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumFacing;
@@ -27,7 +26,6 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.FluidTankProperties;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
@@ -53,18 +51,6 @@ public class FluidCapabilityBucketWrapper implements IFluidHandlerItem, ICapabil
     public ItemStack getContainer()
     {
         return container;
-    }
-
-    protected void setFluid(FluidStack fluidStack)
-    {
-        if (fluidStack == null)
-        {
-            container = new ItemStack(Items.BUCKET);
-        }
-        else
-        {
-            container = FluidUtil.getFilledBucket(fluidStack);
-        }
     }
 
     @Override

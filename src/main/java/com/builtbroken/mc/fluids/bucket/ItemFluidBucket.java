@@ -516,7 +516,7 @@ public class ItemFluidBucket extends Item
     {
         final BucketMaterial material = BucketMaterialHandler.getMaterial(stack.getItemDamage());
         final FluidStack fluid = getFluid(stack);
-        if (fluid != null && fluid.getFluid() != null)
+        if (material != null && fluid != null && fluid.getFluid() != null)
         {
             //Material handler
             if (material.getHandler() != null && material.getHandler().onUpdate(stack, world, entity, slot, held))
@@ -641,7 +641,7 @@ public class ItemFluidBucket extends Item
     {
         final BucketMaterial material = BucketMaterialHandler.getMaterial(entityItem.getItem().getItemDamage());
         final FluidStack fluid = getFluid(entityItem.getItem());
-        if (fluid != null && fluid.getFluid() != null)
+        if (material != null && fluid != null && fluid.getFluid() != null)
         {
             //Material handler
             if (material.getHandler() != null && material.getHandler().onEntityItemUpdate(entityItem))
