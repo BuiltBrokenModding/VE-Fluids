@@ -25,8 +25,6 @@ import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.SidedProxy;
-import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
@@ -110,7 +108,7 @@ public final class FluidModule
         if (runningAsDev)
         {
             BucketMaterialHandler.addMaterial("test_itemstack_usage",
-                    new BucketMaterialMimic(DOMAIN + ":ironBucket", new ItemStack(Items.LEATHER_HELMET)),
+                    new BucketMaterialMimic(DOMAIN + ":ironBucket", new ItemStack(Items.LEATHER_HELMET)).invertBucketRender(),
                     30001);
         }
 

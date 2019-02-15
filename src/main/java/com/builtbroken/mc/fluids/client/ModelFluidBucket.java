@@ -102,10 +102,10 @@ public class ModelFluidBucket implements IModel
     }
 
     @Override
-    public IBakedModel bake(IModelState state, VertexFormat format, java.util.function.Function<ResourceLocation, TextureAtlasSprite> bakedTextureGetter)
+    public IBakedModel bake(IModelState normal_state, VertexFormat format, java.util.function.Function<ResourceLocation, TextureAtlasSprite> bakedTextureGetter)
 
     {
-        ImmutableMap<TransformType, TRSRTransformation> transformMap = PerspectiveMapWrapper.getTransforms(state);
+        ImmutableMap<TransformType, TRSRTransformation> transformMap = PerspectiveMapWrapper.getTransforms(normal_state);
 
         if (transformMap.isEmpty())
         {
@@ -121,16 +121,17 @@ public class ModelFluidBucket implements IModel
             transformMap = PerspectiveMapWrapper.getTransforms(new SimpleModelState(builder.build()));
         }
 
+        TRSRTransformation normal_transform = normal_state.apply(java.util.Optional.empty()).orElse(TRSRTransformation.identity());
+
         // if the fluid is a gas wi manipulate the initial state to be rotated 180? to turn it upside down
         final boolean isGas = fluid != null && fluid.isGaseous();
         final boolean disableGasFlip = material != null && material.disableGasFlip();
-        final boolean invert = material != null && material.shouldInvertBucketRender();
-        if (isGas && !disableGasFlip && !invert || (!isGas || disableGasFlip) && invert)
-        {
-            state = new ModelStateComposition(state, TRSRTransformation.blockCenterToCorner(new TRSRTransformation(null, new Quat4f(0, 0, 1, 0), null, null)));
-        }
+        final boolean invertBucket = isGas && !disableGasFlip || material != null && material.shouldInvertBucketRender();
+        final boolean invertFluid = isGas && !disableGasFlip || material != null && material.shouldInvertFluidRender();
 
-        TRSRTransformation transform = state.apply(java.util.Optional.empty()).orElse(TRSRTransformation.identity());
+        IModelState flipped_state = new ModelStateComposition(normal_state, TRSRTransformation.blockCenterToCorner(new TRSRTransformation(null, new Quat4f(0, 0, 1, 0), null, null)));
+        TRSRTransformation flip_transform = flipped_state.apply(java.util.Optional.empty()).orElse(TRSRTransformation.identity());
+
         TextureAtlasSprite fluidSprite = null;
         ImmutableList.Builder<BakedQuad> builder = ImmutableList.builder();
 
@@ -163,22 +164,22 @@ public class ModelFluidBucket implements IModel
                 final IBakedModel model = Minecraft.getMinecraft().getRenderItem().getItemModelMesher().getItemModel(bucketMimic);
                 if (model != null)
                 {
-                    builder.addAll(QuadTransformer.processMany(model.getQuads(null, null, 0), transform.getMatrix()));
+                    builder.addAll(QuadTransformer.processMany(model.getQuads(null, null, 0), (invertBucket ? flip_transform : normal_transform).getMatrix()));
                 }
             }
         }
         else
         {
-            IBakedModel model = (new ItemLayerModel(ImmutableList.of(bucket_texture))).bake(state, format, bakedTextureGetter);
+            IBakedModel model = (new ItemLayerModel(ImmutableList.of(bucket_texture))).bake(invertBucket ? flip_transform : normal_transform, format, bakedTextureGetter);
             builder.addAll(model.getQuads(null, null, 0));
         }
 
-        if(fluid != null)
+        if (fluid != null)
         {
             // build liquid layer (inside)
             TextureAtlasSprite liquid = bakedTextureGetter.apply(fluid_texture);
-            builder.addAll(ItemTextureQuadConverter.convertTexture(format, transform, liquid, fluidSprite, NORTH_Z_FLUID, EnumFacing.NORTH, fluid.getColor()));
-            builder.addAll(ItemTextureQuadConverter.convertTexture(format, transform, liquid, fluidSprite, SOUTH_Z_FLUID, EnumFacing.SOUTH, fluid.getColor())); //seems to be darker
+            builder.addAll(ItemTextureQuadConverter.convertTexture(format, invertFluid ? flip_transform : normal_transform, liquid, fluidSprite, NORTH_Z_FLUID, EnumFacing.NORTH, fluid.getColor()));
+            builder.addAll(ItemTextureQuadConverter.convertTexture(format, invertFluid ? flip_transform : normal_transform, liquid, fluidSprite, SOUTH_Z_FLUID, EnumFacing.SOUTH, fluid.getColor())); //seems to be darker
         }
 
         return new BakedFluidBucket(this, builder.build(), fluidSprite, format, Maps.immutableEnumMap(transformMap), Maps.newHashMap());
@@ -330,7 +331,10 @@ public class ModelFluidBucket implements IModel
         @Override
         public List<BakedQuad> getQuads(@Nullable IBlockState state, @Nullable EnumFacing side, long rand)
         {
-            if (side == null) return quads;
+            if (side == null)
+            {
+                return quads;
+            }
             return ImmutableList.of();
         }
 

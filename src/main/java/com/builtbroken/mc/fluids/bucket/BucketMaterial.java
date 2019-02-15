@@ -52,6 +52,7 @@ public class BucketMaterial
     protected ResourceLocation bucketResourceLocation;
     protected ResourceLocation fluidResourceLocation;
     protected boolean invertBucketRender = false;
+    protected boolean invertFluidRender = false;
     protected boolean disableGasRenderFlip = false;
 
     public BucketMaterial(String localization, ResourceLocation bucketResourceLocation)
@@ -137,6 +138,23 @@ public class BucketMaterial
     public boolean shouldInvertBucketRender()
     {
         return invertBucketRender;
+    }
+
+    public boolean shouldInvertFluidRender()
+    {
+        return invertFluidRender;
+    }
+
+    public BucketMaterial invertBucketRender()
+    {
+        invertBucketRender = true;
+        return this;
+    }
+
+    public BucketMaterial invertFluidRender()
+    {
+        invertFluidRender = true;
+        return this;
     }
 
     /**
