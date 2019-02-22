@@ -1,7 +1,7 @@
 package com.builtbroken.mc.fluids.client;
 
 import com.builtbroken.mc.fluids.FluidModule;
-import com.builtbroken.mc.fluids.api.reg.BucketMaterialRegistryEvent;
+import com.builtbroken.mc.fluids.api.reg.BucketMaterialModelRegistryEvent;
 import com.builtbroken.mc.fluids.bucket.BucketMaterial;
 import com.builtbroken.mc.fluids.bucket.BucketMaterialHandler;
 import com.builtbroken.mc.fluids.fluid.FluidHelper;
@@ -49,7 +49,7 @@ public class FluidClientReg
         models.add(DEFAULT_MODEL);
 
         //Collect bucket models, fire events to allow override
-        BucketMaterialRegistryEvent.Model modelEvent = new BucketMaterialRegistryEvent.Model(null, null);
+        BucketMaterialModelRegistryEvent modelEvent = new BucketMaterialModelRegistryEvent(null, null);
         for (BucketMaterial material : BucketMaterialHandler.getMaterials())
         {
             modelEvent.modelResourceLocation = DEFAULT_MODEL;
