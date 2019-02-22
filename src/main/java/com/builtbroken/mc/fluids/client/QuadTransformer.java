@@ -4,6 +4,8 @@ import com.google.common.collect.Lists;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.vertex.VertexFormat;
 import net.minecraft.client.renderer.vertex.VertexFormatElement;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 import javax.vecmath.Matrix4f;
 import javax.vecmath.Vector4f;
@@ -13,6 +15,7 @@ import java.util.List;
 
 //From gigaherz
 //https://gist.github.com/gigaherz/2a79bbd8e99286e54db5f3f267f98829
+@SideOnly(Side.CLIENT)
 public class QuadTransformer
 {
     private static void processVertices(Matrix4f transform, VertexFormat fmt, int positionIndex, int[] inData, int[] outData)

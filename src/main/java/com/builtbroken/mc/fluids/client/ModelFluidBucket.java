@@ -27,6 +27,8 @@ import net.minecraftforge.common.model.TRSRTransformation;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.Nullable;
@@ -41,6 +43,7 @@ import java.util.Map;
  * Clone of {@link net.minecraftforge.client.model.ModelDynBucket} to be more customized towards the application of VE's bucket
  * Though a lot of the code is custom All credit goes to the orginal creator plus fry, lex, and anyone else.
  */
+@SideOnly(Side.CLIENT)
 public class ModelFluidBucket implements IModel
 {
 

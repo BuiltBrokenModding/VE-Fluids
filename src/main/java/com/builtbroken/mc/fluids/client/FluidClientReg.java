@@ -19,6 +19,7 @@ import net.minecraftforge.fluids.IFluidBlock;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,6 +28,7 @@ import java.util.Set;
 /**
  * Created by Dark(DarkGuardsman, Robert) on 2/12/19.
  */
+@SideOnly(Side.CLIENT)
 @Mod.EventBusSubscriber(modid = FluidModule.DOMAIN, value = Side.CLIENT)
 public class FluidClientReg
 {
