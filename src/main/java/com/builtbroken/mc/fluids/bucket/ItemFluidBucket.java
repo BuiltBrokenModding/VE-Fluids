@@ -1,6 +1,7 @@
 package com.builtbroken.mc.fluids.bucket;
 
 import com.builtbroken.mc.fluids.FluidModule;
+import com.builtbroken.mc.fluids.api.material.IBucketMaterialMimic;
 import com.builtbroken.mc.fluids.bucket.cap.BucketCapProvider;
 import com.builtbroken.mc.fluids.mods.BucketHandler;
 import net.minecraft.block.Block;
@@ -363,7 +364,16 @@ public class ItemFluidBucket extends Item
      */
     public boolean isEmpty(ItemStack container)
     {
-        return getFluid(container) == null;
+        FluidStack fluid = getFluid(container);
+        if(fluid != null && fluid.amount <= 0)
+        {
+            if(container.getTagCompound() != null)
+            {
+                container.getTagCompound().removeTag("Fluid");
+            }
+            return true;
+        }
+        return fluid == null;
     }
 
     /**
@@ -787,7 +797,7 @@ public class ItemFluidBucket extends Item
         {
             for (BucketMaterial material : BucketMaterialHandler.getMaterials())
             {
-                list.add(new ItemStack(this, 1, material.metaValue));
+                list.add(material.getNewBucketStack(material instanceof IBucketMaterialMimic ? ((IBucketMaterialMimic) material).getItemToMimic(null) : null));
             }
 
             if (tab != CreativeTabs.SEARCH)
