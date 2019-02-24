@@ -100,6 +100,8 @@ public final class FluidModule
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent preInitEvent)
     {
+        registerCaps();
+
         config = new Configuration(new File(preInitEvent.getModConfigurationDirectory(), "bbm/Fluid_Module/core.cfg"));
         config.load();
 
