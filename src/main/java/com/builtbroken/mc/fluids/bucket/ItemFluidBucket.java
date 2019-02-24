@@ -782,20 +782,23 @@ public class ItemFluidBucket extends Item
     @Override
     public void getSubItems(CreativeTabs tab, NonNullList<ItemStack> list)
     {
-        if (tab == getCreativeTab())
+        if (tab == getCreativeTab() || tab == CreativeTabs.SEARCH)
         {
             for (BucketMaterial material : BucketMaterialHandler.getMaterials())
             {
                 list.add(new ItemStack(this, 1, material.metaValue));
             }
 
-            for (Fluid fluid : FluidRegistry.getRegisteredFluids().values())
+            if (tab != CreativeTabs.SEARCH)
             {
-                if (fluid != null)
+                for (Fluid fluid : FluidRegistry.getRegisteredFluids().values())
                 {
-                    ItemStack milkBucket = new ItemStack(this, 1, BucketMaterialHandler.getMaterials().iterator().next().metaValue);
-                    fill(milkBucket, new FluidStack(fluid, Fluid.BUCKET_VOLUME), true);
-                    list.add(milkBucket);
+                    if (fluid != null)
+                    {
+                        ItemStack milkBucket = new ItemStack(this, 1, BucketMaterialHandler.getMaterials().iterator().next().metaValue);
+                        fill(milkBucket, new FluidStack(fluid, Fluid.BUCKET_VOLUME), true);
+                        list.add(milkBucket);
+                    }
                 }
             }
 
