@@ -52,7 +52,14 @@ public class BucketMaterialHandler
      */
     public static void addMaterial(String name, BucketMaterial material, int requestedMeta)
     {
+        if (name.contains(":"))
+        {
+            throw new RuntimeException("[BucketMaterialHandler] Bucket material names can not contain ':' colin as this is used as part of the config system", new RuntimeException("trace"));
+        }
+
         boolean registered = false;
+
+
         //Set material name
         material.materialName = name;
 

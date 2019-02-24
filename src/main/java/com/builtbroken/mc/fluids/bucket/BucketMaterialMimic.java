@@ -22,6 +22,17 @@ public class BucketMaterialMimic extends BucketMaterial implements IBucketMateri
     }
 
     @Override
+    public String getTranslationKey(ItemStack stack)
+    {
+        ItemStack mimicStack = getItemToMimic(stack);
+        if (mimicStack != null && !mimicStack.isEmpty())
+        {
+            return mimicStack.getTranslationKey();
+        }
+        return super.getTranslationKey(stack);
+    }
+
+    @Override
     public ItemStack getNewBucketStack(ItemStack heldItemStack)
     {
         final ItemStack stack = new ItemStack(FluidModule.bucket, 1, metaValue);

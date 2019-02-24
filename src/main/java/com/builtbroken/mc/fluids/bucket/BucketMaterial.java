@@ -110,7 +110,7 @@ public class BucketMaterial implements IBucketMaterial
         return "BucketUsage." + materialName;
     }
 
-    public String getUnlocalizedName(ItemStack stack)
+    public String getTranslationKey(ItemStack stack)
     {
         return "item." + localization;
     }

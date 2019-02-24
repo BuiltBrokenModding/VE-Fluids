@@ -832,7 +832,7 @@ public class ItemFluidBucket extends Item
         BucketMaterial material = BucketMaterialHandler.getMaterial(stack.getItemDamage());
         if (material != null)
         {
-            return material.getUnlocalizedName(stack);
+            return material.getTranslationKey(stack);
         }
         return super.getTranslationKey();
     }
