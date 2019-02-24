@@ -17,16 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-package com.builtbroken.mc.fluids.bucket;
+package com.builtbroken.mc.fluids.bucket.cap;
 
+import com.builtbroken.mc.fluids.bucket.ItemFluidBucket;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumFacing;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.FluidTankProperties;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.fluids.capability.IFluidTankProperties;
@@ -37,7 +34,7 @@ import javax.annotation.Nullable;
 /**
  * Capability provider for fluid access to bucket. Mainly acts as a wrapper for old code to new code.
  */
-public class FluidCapabilityBucketWrapper implements IFluidHandlerItem, ICapabilityProvider
+public class FluidCapabilityBucketWrapper implements IFluidHandlerItem
 {
     protected ItemStack container;
 
@@ -98,23 +95,6 @@ public class FluidCapabilityBucketWrapper implements IFluidHandlerItem, ICapabil
         if (item instanceof ItemFluidBucket)
         {
             return ((ItemFluidBucket) item).drain(container, maxDrain, doDrain);
-        }
-        return null;
-    }
-
-    @Override
-    public boolean hasCapability(Capability<?> capability, EnumFacing facing)
-    {
-        return capability == CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY;
-    }
-
-    @Override
-    @Nullable
-    public <T> T getCapability(Capability<T> capability, EnumFacing facing)
-    {
-        if (capability == CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY)
-        {
-            return CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY.cast(this);
         }
         return null;
     }

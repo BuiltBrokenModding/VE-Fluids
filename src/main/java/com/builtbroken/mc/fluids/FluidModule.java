@@ -1,11 +1,10 @@
 package com.builtbroken.mc.fluids;
 
+import com.builtbroken.mc.fluids.api.cap.IBucketCap;
 import com.builtbroken.mc.fluids.api.reg.BucketMaterialRegistryEvent;
 import com.builtbroken.mc.fluids.api.reg.FluidRegistryEvent;
-import com.builtbroken.mc.fluids.bucket.BucketMaterial;
-import com.builtbroken.mc.fluids.bucket.BucketMaterialHandler;
-import com.builtbroken.mc.fluids.bucket.BucketMaterialMimic;
-import com.builtbroken.mc.fluids.bucket.ItemFluidBucket;
+import com.builtbroken.mc.fluids.bucket.*;
+import com.builtbroken.mc.fluids.bucket.cap.CapabilityBucket;
 import com.builtbroken.mc.fluids.fluid.FluidHelper;
 import com.builtbroken.mc.fluids.fluid.Fluids;
 import com.builtbroken.mc.fluids.mods.BucketHandler;
@@ -17,8 +16,13 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
+import net.minecraft.nbt.NBTBase;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.CapabilityInject;
+import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fluids.Fluid;
@@ -32,6 +36,7 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.File;
 
 /**
@@ -81,6 +86,9 @@ public final class FluidModule
      */
     public static ItemFluidBucket bucket;
 
+    @CapabilityInject(IBucketCap.class)
+    public static Capability<IBucketCap> BUCKET_CAPABILITY = null;
+
     public FluidModule()
     {
         if (runningAsDev)
@@ -123,6 +131,25 @@ public final class FluidModule
                 FluidRegistry.addBucketForFluid(fluid);
             }
         }
+    }
+    public void registerCaps()
+    {
+        CapabilityManager.INSTANCE.register(IBucketCap.class, new Capability.IStorage<IBucketCap>()
+                {
+                    @Nullable
+                    @Override
+                    public NBTBase writeNBT(Capability<IBucketCap> capability, IBucketCap instance, EnumFacing side)
+                    {
+                        return null;
+                    }
+
+                    @Override
+                    public void readNBT(Capability<IBucketCap> capability, IBucketCap instance, EnumFacing side, NBTBase nbt)
+                    {
+
+                    }
+                },
+                () -> new CapabilityBucket(FluidModule.materialIron));
     }
 
     @SubscribeEvent

@@ -1,6 +1,7 @@
 package com.builtbroken.mc.fluids.bucket;
 
 import com.builtbroken.mc.fluids.FluidModule;
+import com.builtbroken.mc.fluids.bucket.cap.BucketCapProvider;
 import com.builtbroken.mc.fluids.mods.BucketHandler;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockLiquid;
@@ -64,7 +65,7 @@ public class ItemFluidBucket extends Item
     @Override
     public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable NBTTagCompound nbt)
     {
-        return new FluidCapabilityBucketWrapper(stack);
+        return new BucketCapProvider(stack);
     }
 
     @Override

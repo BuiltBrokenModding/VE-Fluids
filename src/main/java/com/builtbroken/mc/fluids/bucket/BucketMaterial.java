@@ -1,5 +1,7 @@
 package com.builtbroken.mc.fluids.bucket;
 
+import com.builtbroken.mc.fluids.FluidModule;
+import com.builtbroken.mc.fluids.api.material.IBucketMaterial;
 import com.builtbroken.mc.fluids.mods.BucketHandler;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
@@ -15,9 +17,8 @@ import java.util.List;
  * @see <a href="https://github.com/BuiltBrokenModding/VoltzEngine/blob/development/license.md">License</a> for what you can and can't do with the code.
  * Created by Dark(DarkGuardsman, Robert) on 3/3/2017.
  */
-public class BucketMaterial
+public class BucketMaterial implements IBucketMaterial
 {
-
     //Settings
     public boolean preventHotFluidUsage = true;
     public boolean damageBucketWithHotFluid = true;
@@ -197,6 +198,18 @@ public class BucketMaterial
         this.handler = handler;
         BucketHandler.addBucketHandler(handler);
     }
+
+    /**
+     * Gets a new bucket stack instance
+     *
+     * @param heldItemStack - can be null, will be provided for copying data
+     * @return new stack of this bucket
+     */
+    public ItemStack getNewBucketStack(ItemStack heldItemStack)
+    {
+        return new ItemStack(FluidModule.bucket, 1, metaValue);
+    }
+
 
     @Override
     public String toString()
