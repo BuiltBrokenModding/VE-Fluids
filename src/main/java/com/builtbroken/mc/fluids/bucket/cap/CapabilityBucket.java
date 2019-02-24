@@ -34,7 +34,7 @@ public class CapabilityBucket implements IBucketCap
     @Override
     public ItemStack getOriginalStack(boolean copy)
     {
-        return copy ? originalStack.copy() : originalStack;
+        return copy && originalStack != null ? originalStack.copy() : originalStack;
     }
 
     @Override
