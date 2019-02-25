@@ -200,7 +200,15 @@ public class BucketMaterial implements IBucketMaterial
     }
 
     /**
-     * Gets a new bucket stack instance
+     * Gets a new bucket stack instance.
+     * <p>
+     * The stack passed in may be a bucket matching the current material
+     * or anther item. It is up to the implementation to decide how
+     * to handle this stack.
+     * <p>
+     * If its a bucket the recommendation is to copy material specific data. If
+     * its an item and this material is mean to mimic said item. Then the recommendation
+     * is to copy the item to return as am empty container.
      *
      * @param heldItemStack - can be null, will be provided for copying data
      * @return new stack of this bucket
@@ -210,6 +218,10 @@ public class BucketMaterial implements IBucketMaterial
         return new ItemStack(FluidModule.bucket, 1, metaValue);
     }
 
+    public ItemStack getEmptyBucket(ItemStack heldItemStack)
+    {
+        return getNewBucketStack(heldItemStack);
+    }
 
     @Override
     public String toString()

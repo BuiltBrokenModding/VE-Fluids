@@ -153,7 +153,7 @@ public class ItemFluidBucket extends Item
 
                             if (!blockMaterial.isSolid() && block.isReplaceable(world, movingobjectposition.getBlockPos()))
                             {
-                                return new ActionResult(EnumActionResult.SUCCESS, placeFluid(player, itemstack, world, movingobjectposition.getBlockPos()));
+                                return new ActionResult(EnumActionResult.SUCCESS, placeFluid(player, itemstack, bucketMaterial, world, movingobjectposition.getBlockPos()));
                             }
                         }
 
@@ -185,7 +185,7 @@ public class ItemFluidBucket extends Item
                                     }
                                 }
                             }
-                            return new ActionResult(EnumActionResult.SUCCESS, placeFluid(player, itemstack, world, blockpos1));
+                            return new ActionResult(EnumActionResult.SUCCESS, placeFluid(player, itemstack, bucketMaterial, world, blockpos1));
                         }
                     }
                 }
@@ -220,7 +220,7 @@ public class ItemFluidBucket extends Item
         }
     }
 
-    public ItemStack pickupFluid(EntityPlayer player, ItemStack itemstack, BucketMaterial material, World world, BlockPos pos)
+    public ItemStack pickupFluid(EntityPlayer player, ItemStack currentBucketStack, BucketMaterial material, World world, BlockPos pos)
     {
         IBlockState blockState = world.getBlockState(pos);
         Block block = blockState.getBlock();
@@ -230,8 +230,8 @@ public class ItemFluidBucket extends Item
         {
             if (material.getHandler() != null)
             {
-                ItemStack stack = material.getHandler().emptyBucketClickBlock(player, itemstack, world, pos);
-                if (!ItemStack.areItemStacksEqualUsingNBTShareTag(itemstack, stack))
+                ItemStack stack = material.getHandler().emptyBucketClickBlock(player, currentBucketStack, world, pos);
+                if (!ItemStack.areItemStacksEqualUsingNBTShareTag(currentBucketStack, stack))
                 {
                     return stack;
                 }
@@ -244,8 +244,8 @@ public class ItemFluidBucket extends Item
             BucketHandler handler = BucketHandler.blockToHandler.get(block);
             if (handler != null)
             {
-                ItemStack stack = handler.emptyBucketClickBlock(player, itemstack, world, pos);
-                if (!ItemStack.areItemStacksEqualUsingNBTShareTag(itemstack, stack))
+                ItemStack stack = handler.emptyBucketClickBlock(player, currentBucketStack, world, pos);
+                if (!ItemStack.areItemStacksEqualUsingNBTShareTag(currentBucketStack, stack))
                 {
                     return stack;
                 }
@@ -256,18 +256,18 @@ public class ItemFluidBucket extends Item
         {
             if (world.setBlockToAir(pos))
             {
-                ItemStack bucket = getEmptyBucket(itemstack);
+                ItemStack bucket = getNewBucketToFill(currentBucketStack, material);
                 fill(bucket, new FluidStack(FluidRegistry.WATER, Fluid.BUCKET_VOLUME), true);
-                return this.consumeBucket(itemstack, player, bucket);
+                return this.consumeBucket(currentBucketStack, player, bucket);
             }
         }
         else if (block == Blocks.LAVA && ((Integer) blockState.getValue(BlockLiquid.LEVEL)).intValue() == 0)
         {
             if (world.setBlockToAir(pos))
             {
-                ItemStack bucket = getEmptyBucket(itemstack);
+                ItemStack bucket = getNewBucketToFill(currentBucketStack, material);
                 fill(bucket, new FluidStack(FluidRegistry.LAVA, Fluid.BUCKET_VOLUME), true);
-                return this.consumeBucket(itemstack, player, bucket);
+                return this.consumeBucket(currentBucketStack, player, bucket);
             }
         }
         else if (block instanceof IFluidBlock && ((IFluidBlock) block).canDrain(world, pos))
@@ -277,13 +277,13 @@ public class ItemFluidBucket extends Item
             //TODO allow partial fills
             if (isValidFluidStack(drainedFluid))
             {
-                ItemStack bucket = getEmptyBucket(itemstack);
+                ItemStack bucket = getNewBucketToFill(currentBucketStack, material);
                 drainedFluid = ((IFluidBlock) block).drain(world, pos, true);
 
                 if (isValidFluidStack(drainedFluid))
                 {
                     fill(bucket, drainedFluid, true);
-                    return this.consumeBucket(itemstack, player, bucket);
+                    return this.consumeBucket(currentBucketStack, player, bucket);
                 }
                 //Backup in case or error
                 else if (world.getBlockState(pos).getBlock() != block)
@@ -292,7 +292,7 @@ public class ItemFluidBucket extends Item
                 }
             }
         }
-        return itemstack;
+        return currentBucketStack;
     }
 
     private boolean isValidFluidStack(FluidStack drainedFluid)
@@ -303,15 +303,15 @@ public class ItemFluidBucket extends Item
     /**
      * Attempts to place the liquid contained inside the bucket.
      */
-    public ItemStack placeFluid(EntityPlayer player, ItemStack itemstack, World world, BlockPos pos)
+    public ItemStack placeFluid(EntityPlayer player, ItemStack currentBucketStack, BucketMaterial material, World world, BlockPos pos)
     {
         Block block = world.getBlockState(pos).getBlock();
         //Material material = block.getMaterial();
-        if (isFull(itemstack))
+        if (isFull(currentBucketStack)) //TODO change to check for empty to place 1 block, as we might add larger buckets
         {
             if (world.isAirBlock(pos) || block.isReplaceable(world, pos))
             {
-                FluidStack stack = getFluid(itemstack);
+                FluidStack stack = getFluid(currentBucketStack);
                 if (stack != null && stack.getFluid() != null && stack.getFluid().canBePlacedInWorld() && stack.getFluid().getBlock() != null)
                 {
                     //TODO add support for oil and other fuel types to explode in the nether
@@ -324,7 +324,7 @@ public class ItemFluidBucket extends Item
                         {
                             world.spawnParticle(EnumParticleTypes.SMOKE_LARGE, (double) pos.getX() + Math.random(), (double) pos.getY() + Math.random(), (double) pos.getZ() + Math.random(), 0.0D, 0.0D, 0.0D, new int[0]);
                         }
-                        return consumeBucket(itemstack, player, getEmptyBucket(itemstack));
+                        return consumeBucket(currentBucketStack, player, getBucketToReturnForEmpty(currentBucketStack, material));
                     }
                     else
                     {
@@ -344,7 +344,7 @@ public class ItemFluidBucket extends Item
                         {
                             world.setBlockState(pos, stack.getFluid().getBlock().getDefaultState());
                         }
-                        return consumeBucket(itemstack, player, new ItemStack(this, 1, itemstack.getItemDamage()));
+                        return consumeBucket(currentBucketStack, player, getBucketToReturnForEmpty(currentBucketStack, material));
                     }
                 }
             }
@@ -353,7 +353,7 @@ public class ItemFluidBucket extends Item
         {
             player.sendMessage(new TextComponentTranslation(getTranslationKey() + ".volume.notEnoughForFullBlock"));
         }
-        return itemstack;
+        return currentBucketStack;
     }
 
     /**
@@ -741,7 +741,7 @@ public class ItemFluidBucket extends Item
                     final Fluid fluid = FluidRegistry.getFluid("milk");
                     if (fluid != null)
                     {
-                        ItemStack newBucket = getEmptyBucket(stack);
+                        ItemStack newBucket = getNewBucketToFill(stack, material);
                         fill(newBucket, new FluidStack(fluid, Fluid.BUCKET_VOLUME), true);
                         player.inventory.setInventorySlotContents(player.inventory.currentItem, consumeBucket(stack, player, newBucket));
                         player.inventoryContainer.detectAndSendChanges();
@@ -758,6 +758,15 @@ public class ItemFluidBucket extends Item
         return false;
     }
 
+    public static ItemStack getNewBucketToFill(ItemStack stack, BucketMaterial material)
+    {
+        if(material != null)
+        {
+            return material.getNewBucketStack(stack);
+        }
+        return new ItemStack(stack.getItem(), 1, stack.getItemDamage());
+    }
+
     /**
      * Helper to create a new empty bucket matching data of
      * existing bucket without a fluid
@@ -765,9 +774,12 @@ public class ItemFluidBucket extends Item
      * @param stack - item
      * @return new item
      */
-    public static ItemStack getEmptyBucket(ItemStack stack)
+    public static ItemStack getBucketToReturnForEmpty(ItemStack stack, BucketMaterial material)
     {
-        //TODO save any NBT data needed by the bucket
+        if(material != null)
+        {
+            return material.getEmptyBucket(stack);
+        }
         return new ItemStack(stack.getItem(), 1, stack.getItemDamage());
     }
 
@@ -806,7 +818,8 @@ public class ItemFluidBucket extends Item
                 {
                     if (fluid != null)
                     {
-                        ItemStack milkBucket = new ItemStack(this, 1, BucketMaterialHandler.getMaterials().iterator().next().metaValue);
+                        BucketMaterial material = BucketMaterialHandler.getMaterials().iterator().next(); //TODO improve this to not need an iterator
+                        ItemStack milkBucket = material.getNewBucketStack(null);
                         fill(milkBucket, new FluidStack(fluid, Fluid.BUCKET_VOLUME), true);
                         list.add(milkBucket);
                     }
@@ -827,7 +840,7 @@ public class ItemFluidBucket extends Item
         {
             return null;
         }
-        return new ItemStack(FluidModule.bucket, 1, itemstack.getItemDamage());
+        return getBucketToReturnForEmpty(itemstack, BucketMaterialHandler.getMaterial(itemstack.getItemDamage()));
     }
 
     @Override
